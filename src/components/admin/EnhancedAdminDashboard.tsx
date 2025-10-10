@@ -37,7 +37,14 @@ const EnhancedAdminDashboard = () => {
             title: 'Messages',
             description: 'Répondre aux messages',
             icon: Settings,
-            action: () => navigate('/admin/messages'),
+            action: () => navigate('/admin/messagerie'),
+            color: 'bg-orange-500'
+        },
+        {
+            title: 'Messages',
+            description: 'Répondre aux messages',
+            icon: Settings,
+            action: () => navigate('/admin/concours'),
             color: 'bg-orange-500'
         }
     ];
@@ -79,7 +86,7 @@ const EnhancedAdminDashboard = () => {
             </Card>
 
             {/* Dashboard basé sur les concours */}
-            <ConcoursBasedDashboard/>
+
         </div>
     );
 };

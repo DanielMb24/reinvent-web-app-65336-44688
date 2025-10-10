@@ -1,4 +1,4 @@
-import {apiService} from './api';
+import {api, apiService} from './api';
 
 export interface AdminCandidatureData {
     id: number;
@@ -36,54 +36,15 @@ export interface AdminCandidatureData {
 }
 
 class AdminCandidatureService {
-    async getAllCandidaturesByConcours(concoursId: number): Promise<AdminCandidatureData[]> {
-        try {
-            console.log('AdminCandidatureService: Récupération candidatures pour concours:', concoursId);
-            const response = await apiService.makeRequest<any[]>(
-                `/admin/concours/${concoursId}/candidats`,
-                'GET'
-            );
-            // Transformer les données pour correspondre à AdminCandidatureData
-            const transformedData: AdminCandidatureData[] = (response.data || []).map(item => ({
-                id: item.id,
-                candidat_id: item.id,
-                concours_id: item.concours_id,
-                filiere_id: item.filiere_id,
-                statut: item.statut || 'en_attente',
-                created_at: item.created_at,
-                updated_at: item.updated_at,
-                candidat: {
-                    nupcan: item.nupcan,
-                    nomcan: item.nomcan,
-                    prncan: item.prncan,
-                    maican: item.maican,
-                    telcan: item.telcan,
-                    dtncan: item.dtncan,
-                    ldncan: item.ldncan || '',
-                    phtcan: item.phtcan,
-                },
-                concours: {
-                    libcnc: item.libcnc,
-                    sescnc: item.sescnc || '',
-                    fracnc: item.fracnc || 0,
-                },
-                filiere: {
-                    nomfil: item.nomfil,
-                },
-                paiement: item.paiement, // Peut être undefined
-                documents: item.documents || [],
-            }));
-            return transformedData;
-        } catch (error: any) {
-            console.error('AdminCandidatureService: Erreur récupération candidatures:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data,
-            });
-            throw error;
-        }
+    async getCandidatsByConcours(concoursId: string | number): Promise<AdminCandidatureData> {
+        const response = await apiService.makeRequest<any[]>(`/concours/${concoursId}/candidats`, 'GET');
+        return {
+            success: response.success || false,
+            data: response.data || [],
+            message: response.message || '',
+            errors: response.errors
+        };
     }
-
     async getCandidatureByNupcan(nupcan: string): Promise<AdminCandidatureData | null> {
         try {
             console.log('AdminCandidatureService: Récupération candidature par NUPCAN:', nupcan);

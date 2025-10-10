@@ -1,63 +1,3 @@
-//
-// import { apiService, ApiResponse } from './api';
-//
-// export interface AdminData {
-//   id?: number;
-//   nom: string;
-//   prenom: string;
-//   email: string;
-//   role?: string;
-//   statut?: string;
-//   etablissement_id?: number;
-//   etablissement_nom?: string;
-//   derniere_connexion?: string;
-// }
-//
-// class AdminApiService {
-//   async getAdmins(): Promise<ApiResponse<AdminData[]>> {
-//     try {
-//       return await apiService.makeRequest('/admins', 'GET');
-//     } catch (error) {
-//       console.error('Erreur récupération admins:', error);
-//       throw error;
-//     }
-//   }
-//
-//   async createAdmin(adminData: Omit<AdminData, 'id'>): Promise<ApiResponse<AdminData>> {
-//     try {
-//       console.log('AdminApiService: Création admin avec données:', adminData);
-//       return await apiService.makeRequest('/admin/admins', 'POST', adminData);
-//     } catch (error) {
-//       console.error('AdminApiService: Erreur création admin:', error);
-//       throw error;
-//     }
-//   }
-//
-//
-//
-//
-//
-//   async updateAdmin(id: number, adminData: Partial<AdminData>): Promise<ApiResponse<AdminData>> {
-//     try {
-//       return await apiService.makeRequest(`/admin/admins/${id}`, 'PUT', adminData);
-//     } catch (error) {
-//       console.error('AdminApiService: Erreur modification admin:', error);
-//       throw error;
-//     }
-//   }
-//
-//   async deleteAdmin(id: number): Promise<ApiResponse<void>> {
-//     try {
-//       return await apiService.makeRequest(`/admin/admins/${id}`, 'DELETE');
-//     } catch (error) {
-//       console.error('AdminApiService: Erreur suppression admin:', error);
-//       throw error;
-//     }
-//   }
-// }
-//
-// export const adminApiService = new AdminApiService();
-
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:3000/api/admin';
@@ -106,9 +46,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/management/admins`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -116,7 +54,6 @@ export const adminApiService = {
             throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des admins');
         }
     },
-
 
     createAdmin: async (adminData: any) => {
         try {
@@ -141,10 +78,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.put(`${BASE_URL}/management/admins/${id}`, adminData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
             return response.data;
         } catch (error: any) {
@@ -157,9 +91,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.delete(`${BASE_URL}/management/admins/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -173,9 +105,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/stats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -189,9 +119,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/candidats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -199,26 +127,12 @@ export const adminApiService = {
             throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des candidats');
         }
     },
-    async getSupportRequests({page, limit, searchTerm, filterStatus}: {
-        page: number;
-        limit: number;
-        searchTerm: string;
-        filterStatus: string
-    }) {
-        const response = await axios.get(`${BASE_URL2}/support`, {
-            params: {page, limit, search: searchTerm, status: filterStatus},
-        });
-        return response.data;
-    },
-
 
     getCandidatDetails: async (nupcan: string) => {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/candidats/${nupcan}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -227,14 +141,12 @@ export const adminApiService = {
         }
     },
 
-    // Établissement specific methods
+    // Établissement
     getCandidatsByEtablissement: async (etablissementId: number) => {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/etablissement/${etablissementId}/candidats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -247,9 +159,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/etablissement/${etablissementId}/dossiers`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -262,9 +172,7 @@ export const adminApiService = {
         try {
             const token = adminApiService.getToken();
             const response = await axios.get(`${BASE_URL}/etablissement/${etablissementId}/paiements`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
             return response.data;
         } catch (error: any) {
@@ -280,10 +188,7 @@ export const adminApiService = {
                 statut: status,
                 motif: motif
             }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
             return response.data;
         } catch (error: any) {
@@ -301,15 +206,52 @@ export const adminApiService = {
                 type: type,
                 message: message
             }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
             return response.data;
         } catch (error: any) {
             console.error('Erreur envoi notification:', error);
             throw new Error(error.response?.data?.message || 'Erreur lors de l\'envoi de la notification');
+        }
+    },
+
+    // Support
+    getSupportRequests: async ({page, limit, searchTerm, filterStatus}: {
+        page: number;
+        limit: number;
+        searchTerm: string;
+        filterStatus: string;
+    }) => {
+        const response = await axios.get(`${BASE_URL2}/support`, {
+            params: {page, limit, search: searchTerm, status: filterStatus},
+        });
+        return response.data;
+    },
+
+    // Nouvelles fonctions ajoutées
+    getConcoursByEtablissement: async (etablissementId: string | number) => {
+        try {
+            const token = adminApiService.getToken();
+            const response = await axios.get(`${BASE_URL}/etablissement/${etablissementId}/concours`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return { success: true, data: response.data, message: '' };
+        } catch (error: any) {
+            console.error('Erreur récupération concours établissement:', error);
+            throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des concours');
+        }
+    },
+
+    getCandidatsByConcours: async (concoursId: string | number) => {
+        try {
+            const token = adminApiService.getToken();
+            const response = await axios.get(`${BASE_URL}/concours/${concoursId}/candidats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            return { success: true, data: response.data, message: '' };
+        } catch (error: any) {
+            console.error('Erreur récupération candidats concours:', error);
+            throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des candidats du concours');
         }
     }
 };
