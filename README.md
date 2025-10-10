@@ -103,7 +103,7 @@ FROM_EMAIL=noreply@gabconcours.com
 FRONTEND_URL=http://localhost:8080
 
 # Server
-PORT=3000
+PORT=3001
 ```
 
 ### 5. Démarrer l'application
@@ -119,7 +119,7 @@ npm run dev
 
 L'application sera accessible sur:
 - Frontend: http://localhost:8080
-- Backend API: http://localhost:3000
+- Backend API: http://localhost:3001
 
 ## 🔐 Comptes de test
 

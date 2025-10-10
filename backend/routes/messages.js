@@ -113,7 +113,7 @@ router.post('/candidat', async (req, res) => {
                     <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
                         ${message}
                     </div>
-                    <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/admin/messages">Répondre au message</a></p>
+                    <p><a href="${process.env.APP_URL || 'http://localhost:3001'}/admin/messages">Répondre au message</a></p>
                 </div>
                 `
             );

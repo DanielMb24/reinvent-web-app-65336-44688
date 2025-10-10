@@ -66,7 +66,7 @@ router.post('/receipt', async (req, res) => {
         <p><strong>NUPCAN :</strong> ${nupcan}</p>
         <p>Documents soumis : <strong>${(candidatData?.documents?.length) || 0}</strong></p>
         <p>Veuillez conserver ce reçu. Il est joint en pièce jointe (${attachmentType === 'image' ? 'PNG' : 'PDF'}).</p>
-        <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/dashboard/${nupcan}">Accéder à votre espace candidat</a></p>
+        <p><a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${nupcan}">Accéder à votre espace candidat</a></p>
         <p>Cordialement,<br/>L'équipe GABConcours</p>
       </div>
     `;
@@ -105,7 +105,7 @@ router.post('/document-validation', async (req, res) => {
         <p>Bonjour <strong>${candidat?.prncan || ''} ${candidat?.nomcan || ''}</strong>,</p>
         <p>Le document <strong>${document.nomdoc}</strong> a été <strong>${isValidated ? 'validé' : 'rejeté'}</strong>.</p>
         ${commentaire ? `<div style="background:#f3f4f6;padding:10px;border-radius:6px;margin:15px 0;"><strong>Commentaire :</strong><p>${commentaire}</p></div>` : ''}
-        <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/dashboard/${candidat?.nupcan || ''}">Accéder à mon espace candidat</a></p>
+        <p><a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${candidat?.nupcan || ''}">Accéder à mon espace candidat</a></p>
         <p>Cordialement,<br/>L'équipe GABConcours</p>
       </div>
     `;
@@ -139,7 +139,7 @@ router.post('/admin-credentials', async (req, res) => {
         <p>Votre compte administrateur a été créé.</p>
         <p><strong>Email:</strong> ${admin.email}</p>
         ${passwordDisplay}
-        <p>Connectez-vous ici : <a href="${process.env.APP_URL || 'http://localhost:3000'}/login">${process.env.APP_URL || 'http://localhost:3000'}/login</a></p>
+        <p>Connectez-vous ici : <a href="${process.env.APP_URL || 'http://localhost:3001'}/login">${process.env.APP_URL || 'http://localhost:3001'}/login</a></p>
         <p>Pour votre sécurité, changez votre mot de passe lors de la première connexion.</p>
         <p>Cordialement,<br/>L'équipe GABConcours</p>
       </div>

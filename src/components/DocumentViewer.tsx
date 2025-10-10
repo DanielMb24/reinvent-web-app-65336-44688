@@ -47,7 +47,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({isOpen, onClose, documen
 
     let documentUrl: string | null = null;
     if (documentPath) {
-        documentUrl = `http://localhost:3000/${documentPath.replace(/\\/g, '/')}`;
+        documentUrl = `http://localhost:3001/${documentPath.replace(/\\/g, '/')}`;
     }
 
     // useEffect(() => {

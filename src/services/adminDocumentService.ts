@@ -102,7 +102,7 @@ class AdminDocumentService {
     async downloadDocument(nomFichier: string): Promise<Blob> {
         try {
             console.log('AdminDocumentService: Téléchargement document:', nomFichier);
-            const response = await fetch(`http://localhost:3000/uploads/documents/${nomFichier}`);
+            const response = await fetch(`http://localhost:3001/uploads/documents/${nomFichier}`);
             if (!response.ok) {
                 throw new Error('Erreur lors du téléchargement');
             }
@@ -115,7 +115,7 @@ class AdminDocumentService {
 
     // Obtenir l'URL de prévisualisation
     getDocumentPreviewUrl(nomFichier: string): string {
-        return `http://localhost:3000/uploads/documents/${nomFichier}`;
+        return `http://localhost:3001/uploads/documents/${nomFichier}`;
     }
 
     // Ajouter la méthode manquante

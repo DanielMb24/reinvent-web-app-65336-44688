@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Créer les répertoires uploads s'ils n'existent pas
 const uploadDirs = ['./uploads/documents', './uploads/photos'];

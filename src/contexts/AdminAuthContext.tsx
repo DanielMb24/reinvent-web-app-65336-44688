@@ -21,7 +21,7 @@ interface AdminAuthContextType {
     isSuperAdmin: boolean;
 }
 
-const BASE_URL = 'http://localhost:3000/api/admin';
+const BASE_URL = 'http://localhost:3001/api/admin';
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {

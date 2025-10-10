@@ -84,7 +84,7 @@ router.post('/receipt', async (req, res) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.APP_URL || 'http://localhost:3000'}/dashboard/${nupcan}" 
+              <a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${nupcan}" 
                  style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                  Accéder à mon espace candidat
               </a>
@@ -187,7 +187,7 @@ router.post('/document-validation', async (req, res) => {
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.APP_URL || 'http://localhost:3000'}/dashboard/${candidat.nupcan}" 
+              <a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${candidat.nupcan}" 
                  style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                  Accéder à mon espace candidat
               </a>

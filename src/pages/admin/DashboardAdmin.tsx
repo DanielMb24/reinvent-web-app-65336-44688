@@ -26,6 +26,20 @@ import DocumentValidation from '@/components/admin/DocumentValidation';
 import GradeManagement from '@/components/admin/GradeManagement';
 import MessagerieAdmin from '@/components/admin/MessagerieAdmin';
 import { exportService } from '@/services/exportService';
+import {adminCandidatureService} from "@/services/adminCandidatureService.ts";
+import {useAdminAuth} from "@/contexts/AdminAuthContext.tsx";
+import {adminConcoursService} from "@/services/adminConcoursService.ts";
+import {Message} from "postcss";
+interface ConcoursData {
+    id: number;
+    libcnc: string;
+    fracnc: number;
+    sescnc: string;
+    etablissement_id: number;
+    candidats_count: number;
+    documents_en_attente: number;
+    paiements_valides: number;
+}
 
 // Composant wrapper pour DocumentValidation
 const DocumentValidationTab: React.FC = () => {
@@ -79,34 +93,60 @@ interface DashboardStats {
     };
 }
 
+
 const DashboardAdmin: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'overview' | 'candidats' | 'documents' | 'notes' | 'messages'>('overview');
-    const [selectedConcours, setSelectedConcours] = useState<number | null>(null);
+    const [selectedConcours] = useState<number | null>(null);
+    const {admin, token, isLoading} = useAdminAuth();
+   
+    const [setSelectedConcours] = useState<ConcoursData | null>(null);
 
-    // Récupérer les statistiques
-    const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+    const { data: messages } = useQuery<Message[]>({
+        queryKey: ['admin-messages'],
+        queryFn: async () => {
+            const response = await apiService.makeRequest<Message[]>('/messages/admin', 'GET');
+            return response.data || [];
+        },
+        refetchInterval: 10000,
+    });
+    const defaultStats: DashboardStats = {
+        candidats: { total: 0, complets: 0, en_attente: 0, validation_admin: 0 },
+        documents: { total: 0, en_attente: 0, valides: 0, rejetes: 0 },
+        paiements: { total: 0, valides: 0, en_attente: 0, montant_total: 0 },
+        messages: { total: 0, non_lus: 0 },
+    };
+
+
+
+    const unreadCount = messages?.filter((m) => m.statut === 'non_lu' && m.expediteur === 'candidat').length || 0;
+
+    // ✅ Placer le useQuery ICI, à l’intérieur du composant
+    const { data: stats = defaultStats, isLoading: statsLoading } = useQuery<DashboardStats>({
         queryKey: ['admin-stats'],
         queryFn: async () => {
             const response = await apiService.getStatistics<DashboardStats>();
-            return response.data || {
-                candidats: { total: 0, complets: 0, en_attente: 0, validation_admin: 0 },
-                documents: { total: 0, en_attente: 0, valides: 0, rejetes: 0 },
-                paiements: { total: 0, valides: 0, en_attente: 0, montant_total: 0 },
-                messages: { total: 0, non_lus: 0 }
-            };
+            return response.data || defaultStats;
         },
         refetchInterval: 30000,
     });
 
-    // Récupérer les concours
-    const { data: concoursData } = useQuery({
-        queryKey: ['concours'],
-        queryFn: async () => {
-            const response = await apiService.getConcours<any[]>();
-            return response.data || [];
-        },
+
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    const etablissementId = adminData.etablissement_id || 1;
+
+
+
+    const {data: concoursData, isLoading: isLoadingConcours} = useQuery({
+        queryKey: ['concours', admin?.etablissement_id],
+        queryFn: () => adminConcoursService.getConcoursByEtablissement(admin?.etablissement_id ??0),
+        enabled: !!admin?.etablissement_id && !!token,
+        retry: 2,
     });
+
+
+
+
 
     const handleExportCandidatesExcel = async () => {
         try {
@@ -159,28 +199,34 @@ const DashboardAdmin: React.FC = () => {
     if (statsLoading) {
         return (
             <AdminLayout>
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                </div>
+                <div className="p-8 text-center">Chargement des statistiques...</div>
             </AdminLayout>
         );
     }
 
+
+    const handleViewConcours = (concours: ConcoursData) => {
+        setSelectedConcours(concours);
+    };
+
     return (
-        <AdminLayout>
+
             <div className="p-8">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold mb-2">Tableau de Bord Administration</h1>
-                    <p className="text-muted-foreground">Gérez les candidatures et les concours de votre établissement</p>
+                    <p className="text-muted-foreground">Gestion par concours
+                        - {adminData.etablissement_nom || 'École Normale Supérieure'}</p>
+
                 </div>
 
                 <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                         <TabsTrigger value="candidats">Candidats</TabsTrigger>
                         <TabsTrigger value="documents">Documents</TabsTrigger>
                         <TabsTrigger value="notes">Notes</TabsTrigger>
                         <TabsTrigger value="messages">Messages</TabsTrigger>
+
                     </TabsList>
 
                     <TabsContent value="overview" className="space-y-6">
@@ -192,9 +238,9 @@ const DashboardAdmin: React.FC = () => {
                                     <Users className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats?.candidats.total || 0}</div>
+                                    <div className="text-2xl font-bold"> Total : {stats?.candidats?.total ?? 0}</div>
                                     <p className="text-xs text-muted-foreground">
-                                        {stats?.candidats.complets || 0} dossiers complets
+                                        {stats?.candidats?.complets?? 0} dossiers complets
                                     </p>
                                 </CardContent>
                             </Card>
@@ -205,7 +251,7 @@ const DashboardAdmin: React.FC = () => {
                                     <FileText className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats?.documents.en_attente || 0}</div>
+                                    <div className="text-2xl font-bold">{stats?.documents?.en_attente??0}</div>
                                     <p className="text-xs text-muted-foreground">En attente de validation</p>
                                 </CardContent>
                             </Card>
@@ -217,10 +263,10 @@ const DashboardAdmin: React.FC = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">
-                                        {stats?.paiements.montant_total?.toLocaleString() || 0} FCFA
+                                        {stats?.paiements?.montant_total?.toLocaleString()?? 0} FCFA
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        {stats?.paiements.valides || 0} validés
+                                        {stats?.paiements?.valides ?? 0} validés
                                     </p>
                                 </CardContent>
                             </Card>
@@ -231,8 +277,8 @@ const DashboardAdmin: React.FC = () => {
                                     <MessageSquare className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats?.messages.non_lus || 0}</div>
-                                    <p className="text-xs text-muted-foreground">Messages non lus</p>
+                                    <Badge variant="destructive">{unreadCount} non lu(s)</Badge>
+
                                 </CardContent>
                             </Card>
                         </div>
@@ -272,7 +318,7 @@ const DashboardAdmin: React.FC = () => {
                                             <Card
                                                 key={concours.id}
                                                 className="cursor-pointer hover:border-primary transition-colors"
-                                                onClick={() => setSelectedConcours(concours.id)}
+                                                onClick={() => handleViewConcours(concours)}
                                             >
                                                 <CardHeader>
                                                     <CardTitle className="text-lg">{concours.libcnc}</CardTitle>
@@ -309,57 +355,59 @@ const DashboardAdmin: React.FC = () => {
                         </Card>
 
                         {/* Actions rapides */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <Card className="cursor-pointer hover:border-primary transition-colors"
-                                  onClick={() => setActiveTab('documents')}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <AlertCircle className="h-5 w-5 text-orange-600" />
-                                        Documents en attente
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold">{stats?.documents.en_attente || 0}</div>
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        Nécessitent une validation
-                                    </p>
-                                </CardContent>
-                            </Card>
+                        {/*<div className="grid grid-cols-1 md:grid-cols-3 gap-6">*/}
+                        {/*    <Card className="cursor-pointer hover:border-primary transition-colors"*/}
+                        {/*          onClick={() => setActiveTab('documents')}>*/}
+                        {/*        <CardHeader>*/}
+                        {/*            <CardTitle className="flex items-center gap-2">*/}
+                        {/*                <AlertCircle className="h-5 w-5 text-orange-600" />*/}
+                        {/*                Documents en attente*/}
+                        {/*            </CardTitle>*/}
+                        {/*        </CardHeader>*/}
+                        {/*        <CardContent>*/}
+                        {/*            <div className="text-3xl font-bold">{stats?.documents?.en_attente ?? 0}</div>*/}
+                        {/*            <p className="text-sm text-muted-foreground mt-2">*/}
+                        {/*                Nécessitent une validation*/}
+                        {/*            </p>*/}
+                        {/*        </CardContent>*/}
+                        {/*    </Card>*/}
 
-                            <Card className="cursor-pointer hover:border-primary transition-colors"
-                                  onClick={() => setActiveTab('messages')}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <MessageSquare className="h-5 w-5 text-blue-600" />
-                                        Messages non lus
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold">{stats?.messages.non_lus || 0}</div>
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        Des candidats nécessitent une réponse
-                                    </p>
-                                </CardContent>
-                            </Card>
+                        {/*    <Card className="cursor-pointer hover:border-primary transition-colors"*/}
+                        {/*          onClick={() => setActiveTab('messages')}>*/}
+                        {/*        <CardHeader>*/}
+                        {/*            <CardTitle className="flex items-center gap-2">*/}
+                        {/*                <MessageSquare className="h-5 w-5 text-blue-600" />*/}
+                        {/*                Messages non lus*/}
+                        {/*            </CardTitle>*/}
+                        {/*        </CardHeader>*/}
+                        {/*        <CardContent>*/}
+                        {/*            <div className="text-3xl font-bold">{stats?.messages?.non_lus ?? 0}</div>*/}
+                        {/*            <p className="text-sm text-muted-foreground mt-2">*/}
+                        {/*                Des candidats nécessitent une réponse*/}
+                        {/*            </p>*/}
+                        {/*        </CardContent>*/}
+                        {/*    </Card>*/}
 
-                            <Card className="cursor-pointer hover:border-primary transition-colors"
-                                  onClick={() => setActiveTab('notes')}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <BookOpen className="h-5 w-5 text-green-600" />
-                                        Gestion des notes
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-3xl font-bold">
-                                        {stats?.candidats.complets || 0}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mt-2">
-                                        Candidats éligibles
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </div>
+                        {/*    <Card className="cursor-pointer hover:border-primary transition-colors"*/}
+                        {/*          onClick={() => setActiveTab('notes')}>*/}
+                        {/*        <CardHeader>*/}
+                        {/*            <CardTitle className="flex items-center gap-2">*/}
+                        {/*                <BookOpen className="h-5 w-5 text-green-600" />*/}
+                        {/*                Gestion des notes*/}
+                        {/*            </CardTitle>*/}
+                        {/*        </CardHeader>*/}
+                        {/*        <CardContent>*/}
+                        {/*            <div className="text-3xl font-bold">*/}
+                        {/*                {stats?.candidats?.complets ?? 0}*/}
+                        {/*            </div>*/}
+                        {/*            <p className="text-sm text-muted-foreground mt-2">*/}
+                        {/*                Candidats éligibles*/}
+                        {/*            </p>*/}
+                        {/*        </CardContent>*/}
+                        {/*    </Card>*/}
+                        {/*</div>*/}
+
+
                     </TabsContent>
 
                     <TabsContent value="candidats">
@@ -379,7 +427,7 @@ const DashboardAdmin: React.FC = () => {
                     </TabsContent>
                 </Tabs>
             </div>
-        </AdminLayout>
+
     );
 };
 

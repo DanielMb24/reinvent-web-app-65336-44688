@@ -44,7 +44,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({documents, onClose}) => 
                 {document && (
                     <div className="flex-1 overflow-hidden">
                         <iframe
-                            src={`http://localhost:3000/uploads/documents/${document.chemin_fichier}`}
+                            src={`http://localhost:3001/uploads/documents/${document.chemin_fichier}`}
                             className="w-full h-[70vh]"
                             title={document.nom_document}
                         />

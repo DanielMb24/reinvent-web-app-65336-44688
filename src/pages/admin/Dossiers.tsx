@@ -101,7 +101,7 @@ const Dossiers = () => {
 
     const handleDownloadDocument = (document: any) => {
         if (document.nom_fichier) {
-            const url = `http://localhost:3000/uploads/documents/${document.nom_fichier}`;
+            const url = `http://localhost:3001/uploads/documents/${document.nom_fichier}`;
             window.open(url, '_blank');
         }
     };

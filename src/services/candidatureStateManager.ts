@@ -39,7 +39,7 @@ class CandidatureStateManager {
 
     async initializeNewCandidature(concoursId: string): Promise<CandidatureState> {
         try {
-            const concoursResponse = await fetch(`http://localhost:3000/api/concours/${concoursId}`);
+            const concoursResponse = await fetch(`http://localhost:3001/api/concours/${concoursId}`);
             const concoursData = await concoursResponse.json();
 
             const state: CandidatureState = {
@@ -67,7 +67,7 @@ class CandidatureStateManager {
 
     async initializeContinueCandidature(nupcan: string): Promise<any> {
         try {
-            const response = await fetch(`http://localhost:3000/api/candidats/nupcan/${encodeURIComponent(nupcan)}`);
+            const response = await fetch(`http://localhost:3001/api/candidats/nupcan/${encodeURIComponent(nupcan)}`);
             const candidatureData = await response.json();
 
             if (!candidatureData.success) {
@@ -94,7 +94,7 @@ class CandidatureStateManager {
     async updateProgression(nupcan: string, etape: 'documents' | 'paiement'): Promise<void> {
         try {
             // Mettre à jour la progression via l'API
-            await fetch(`http://localhost:3000/api/candidats/${nupcan}/progression`, {
+            await fetch(`http://localhost:3001/api/candidats/${nupcan}/progression`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

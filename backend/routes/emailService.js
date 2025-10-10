@@ -36,7 +36,7 @@ async function sendReceiptEmail({ to, nupcan, candidatData }) {
       <p>Votre candidature pour <strong>${concours}</strong> a été enregistrée.</p>
       <p><strong>NUPCAN :</strong> ${nupcan}</p>
       <p>Conservez bien ce numéro, il vous servira pour le suivi de votre dossier.</p>
-      <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/dashboard/${nupcan}">Accéder à votre espace candidat</a></p>
+      <p><a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${nupcan}">Accéder à votre espace candidat</a></p>
       <p>Cordialement,<br/>L'équipe GABConcours</p>
     </div>
   `;

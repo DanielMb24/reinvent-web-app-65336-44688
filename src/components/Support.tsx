@@ -32,7 +32,7 @@ const Support = () => {
         setError(null);
 
         try {
-            const response = await axios.post('http://localhost:3000/api/support', formData, {
+            const response = await axios.post('http://localhost:3001/api/support', formData, {
                 headers: {
                     'Content-Type': 'application/json',
                 },

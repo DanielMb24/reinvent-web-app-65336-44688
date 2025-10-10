@@ -1,6 +1,7 @@
 import {api, apiService} from './api';
 
 export interface AdminCandidatureData {
+    data: any[];
     id: number;
     candidat_id: number;
     concours_id: number;

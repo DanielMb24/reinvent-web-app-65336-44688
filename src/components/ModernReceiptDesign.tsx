@@ -134,7 +134,7 @@ const ModernReceiptDesign: React.FC<ModernReceiptDesignProps> = ({
                                     className="w-32 h-40 mx-auto bg-gray-100 border-2 border-blue-200 rounded-lg overflow-hidden">
                                     {candidat.phtcan ? (
                                         <img
-                                            src={`http://localhost:3000/uploads/photos/${candidat.phtcan}`}
+                                            src={`http://localhost:3001/uploads/photos/${candidat.phtcan}`}
                                             alt="Photo candidat"
                                             className="w-full h-full object-cover"
                                         />

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000/api/admin';
-const BASE_URL2 = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:3001/api/admin';
+const BASE_URL2 = 'http://localhost:3001/api';
 
 export const adminApiService = {
     // Authentification

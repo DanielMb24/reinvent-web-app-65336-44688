@@ -116,7 +116,7 @@ const DocumentVisualization: React.FC<DocumentVisualizationProps> = ({
         }
 
         // Use the API endpoint for document download to ensure proper file serving
-        const downloadUrl = `http://localhost:3000/api/documents/${doc.id}/download`;
+        const downloadUrl = `http://localhost:3001/api/documents/${doc.id}/download`;
 
         const link = window.document.createElement('a');
         link.href = downloadUrl;

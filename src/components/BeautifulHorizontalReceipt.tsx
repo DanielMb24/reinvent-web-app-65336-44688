@@ -138,7 +138,7 @@ const BeautifulHorizontalReceipt: React.FC<BeautifulHorizontalReceiptProps> = ({
                                         className="w-32 h-32 rounded-lg overflow-hidden border-4 border-primary/20 shadow-lg bg-white">
                                         {candidat?.phtcan ? (
                                             <img
-                                                src={`http://localhost:3000/uploads/photos/${candidat.phtcan}`}
+                                                src={`http://localhost:3001/uploads/photos/${candidat.phtcan}`}
                                                 alt={`Photo de ${candidat.prncan} ${candidat.nomcan}`}
                                                 className="w-full h-full object-cover"
                                             />

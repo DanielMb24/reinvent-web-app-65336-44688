@@ -19,7 +19,7 @@ const CandidatePhotoCard: React.FC<CandidatePhotoCardProps> = ({candidat}) => {
             <CardContent className="flex justify-center">
                 {candidat.phtcan ? (
                     <img
-                        src={`http://localhost:3000/uploads/photos/${candidat.phtcan}`}
+                        src={`http://localhost:3001/uploads/photos/${candidat.phtcan}`}
                         alt={`Photo de ${candidat.prncan} ${candidat.nomcan}`}
                         className="w-32 h-32 rounded-full object-cover border-4 border-primary"
                         onError={(e) => {

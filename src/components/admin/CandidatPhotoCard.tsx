@@ -16,7 +16,7 @@ interface CandidatPhotoCardProps {
 const CandidatPhotoCard: React.FC<CandidatPhotoCardProps> = ({candidat}) => {
     const getPhotoUrl = () => {
         if (candidat.phtcan && candidat.phtcan !== '{}' && candidat.phtcan.trim() !== '') {
-            return `http://localhost:3000/uploads/photos/${candidat.phtcan}`;
+            return `http://localhost:3001/uploads/photos/${candidat.phtcan}`;
         }
         return null;
     };

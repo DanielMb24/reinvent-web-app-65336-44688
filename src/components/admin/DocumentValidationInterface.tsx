@@ -179,7 +179,7 @@ const DocumentValidationInterface: React.FC<DocumentValidationInterfaceProps> = 
         `
             };
 
-            await fetch('http://localhost:3000/api/email/send', {
+            await fetch('http://localhost:3001/api/email/send', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ const DocumentValidationInterface: React.FC<DocumentValidationInterfaceProps> = 
 
     const downloadDocument = async (document: Document) => {
         try {
-            const response = await fetch(`http://localhost:3000/uploads/documents/${document.chemin_fichier}`);
+            const response = await fetch(`http://localhost:3001/uploads/documents/${document.chemin_fichier}`);
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -355,7 +355,7 @@ const DocumentValidationInterface: React.FC<DocumentValidationInterfaceProps> = 
                             </DialogHeader>
                             <div className="flex-1 overflow-hidden">
                                 <iframe
-                                    src={`http://localhost:3000/uploads/documents/${selectedDocument.chemin_fichier}`}
+                                    src={`http://localhost:3001/uploads/documents/${selectedDocument.chemin_fichier}`}
                                     className="w-full h-[70vh]"
                                     title={selectedDocument.nom_document}
                                 />

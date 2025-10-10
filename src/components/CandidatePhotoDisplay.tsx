@@ -33,7 +33,7 @@ const CandidatePhotoDisplay: React.FC<CandidatePhotoDisplayProps> = ({
     if (photoPath) {
         // Si c'est un nom de fichier ou un chemin, construire l'URL complète
         if (typeof photoPath === 'string' && photoPath !== '{}' && photoPath.trim() !== '') {
-            photoUrl = `http://localhost:3000/uploads/photos/${photoPath}`;
+            photoUrl = `http://localhost:3001/uploads/photos/${photoPath}`;
         }
     }
 
