@@ -30,7 +30,7 @@ import MessagerieAdmin from "@/components/admin/MessagerieAdmin";
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminProtectedRoute from '@/components/admin/AdminProtectedRoute';
 import AdminLogin from '@/pages/admin/Login';
-import AdminDashboard from '@/pages/admin/Dashboard';
+import AdminDashboard from '@/pages/admin/DashboardAdmin';
 import AdminConcours from '@/pages/admin/Concours';
 import AdminCandidats from '@/pages/admin/Candidats';
 import AdminEtablissements from '@/pages/admin/Etablissements';
