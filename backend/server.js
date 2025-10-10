@@ -105,18 +105,16 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/support', supportRoutes);
-
+app.use('/api/notes', notesRoutes);
+app.use('/api/grades', notesRoutes); // Alias for grades
 
 const {router: adminAuthRouter} = require('./routes/adminAuth');
 app.use('/api/admin/auth', adminAuthRouter);
 app.use('/api/admin/management', require('./routes/adminManagement'));
 app.use('/api/admin', adminDocumentsRoutes);
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/messages', messageRoutes);
 app.use('/api/exports', exportRoutes);
 app.use('/api/admin/management', adminManagementRoutes);
 app.use('/api/documents-extended', documentsExtendedRoutes);
-app.use('/api/notes', notesRoutes);
 app.use('/api/user-roles', userRolesRoutes);
 
 // Importer les fonctions de base de données

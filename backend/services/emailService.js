@@ -288,4 +288,24 @@ class EmailService {
     }
 }
 
+// Fonction générique d'envoi d'email
+async function sendEmail(to, subject, html) {
+    try {
+        const mailOptions = {
+            from: process.env.SMTP_USER || 'noreply@gabconcours.ga',
+            to: to,
+            subject: subject,
+            html: html
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log('Email envoyé avec succès à:', to);
+        return true;
+    } catch (error) {
+        console.error('Erreur envoi email:', error);
+        throw error;
+    }
+}
+
 module.exports = new EmailService();
+module.exports.sendEmail = sendEmail;

@@ -111,6 +111,74 @@ router.get('/nupcan/:nupcan', async (req, res) => {
     }
 });
 
+// Route pour les notes par candidat (pour le Dashboard candidat avec /grades/candidat/:nupcan)
+router.get('/candidat/:nupcan', async (req, res) => {
+    try {
+        const { nupcan } = req.params;
+        console.log('Récupération notes pour NUPCAN:', nupcan);
+        
+        const connection = getConnection();
+        
+        // Récupérer le candidat
+        const [candidats] = await connection.execute(
+            'SELECT id, nomcan, prncan, nupcan FROM candidats WHERE nupcan = ?',
+            [nupcan]
+        );
+        
+        if (candidats.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Candidat non trouvé'
+            });
+        }
+        
+        const candidat = candidats[0];
+        
+        // Récupérer les notes
+        const [notes] = await connection.execute(`
+            SELECT 
+                n.id,
+                n.note,
+                n.coefficient,
+                m.nom_matiere as nommat,
+                m.coefficient as coefmat,
+                m.duree
+            FROM notes n
+            LEFT JOIN matieres m ON n.matiere_id = m.id
+            WHERE n.candidat_id = ?
+            ORDER BY m.nom_matiere ASC
+        `, [candidat.id]);
+        
+        // Calculer la moyenne générale
+        let moyenneGenerale = null;
+        if (notes.length > 0) {
+            const totalPoints = notes.reduce((sum, n) => sum + (parseFloat(n.note) * parseFloat(n.coefmat || n.coefficient)), 0);
+            const totalCoef = notes.reduce((sum, n) => sum + parseFloat(n.coefmat || n.coefficient), 0);
+            moyenneGenerale = totalCoef > 0 ? (totalPoints / totalCoef).toFixed(2) : null;
+        }
+        
+        res.json({
+            success: true,
+            data: {
+                candidat: {
+                    id: candidat.id,
+                    nomcan: candidat.nomcan,
+                    prncan: candidat.prncan,
+                    nupcan: candidat.nupcan
+                },
+                notes: notes,
+                moyenneGenerale: moyenneGenerale
+            }
+        });
+    } catch (error) {
+        console.error('Erreur récupération notes candidat:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 // Récupérer toutes les moyennes d'un concours
 router.get('/concours/:concours_id/moyennes', authenticateAdmin, async (req, res) => {
     try {

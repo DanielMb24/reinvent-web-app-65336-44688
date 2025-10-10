@@ -97,36 +97,30 @@ router.post('/candidat', async (req, res) => {
             [nupcan, sujet, message]
         );
         
-        //Envoyer notification email aux admins
+        // Envoyer notification email aux admins
         try {
+            const { sendEmail } = require('../services/emailService');
             await sendEmail(
-                'admin@gabconcours.ga',
+                process.env.ADMIN_EMAIL || 'admin@gabconcours.ga',
                 `Nouveau message de ${candidat.prncan} ${candidat.nomcan}`,
                 `
-                <h2>Nouveau message reçu</h2>
-                <p><strong>De:</strong> ${candidat.prncan} ${candidat.nomcan} (${nupcan})</p>
-                <p><strong>Email:</strong> ${candidat.maican}</p>
-                <p><strong>Sujet:</strong> ${sujet}</p>
-                <p><strong>Message:</strong></p>
-                <p>${message}</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px;">
+                    <h2>Nouveau message reçu</h2>
+                    <p><strong>De:</strong> ${candidat.prncan} ${candidat.nomcan} (${nupcan})</p>
+                    <p><strong>Email:</strong> ${candidat.maican}</p>
+                    <p><strong>Sujet:</strong> ${sujet}</p>
+                    <p><strong>Message:</strong></p>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                        ${message}
+                    </div>
+                    <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/admin/messages">Répondre au message</a></p>
+                </div>
                 `
             );
         } catch (emailError) {
-            console.error('Erreur envoi email:', emailError);
+            console.error('Erreur envoi email admin:', emailError);
         }
-
-
-        try {
-            const emailService = require('../services/emailService');
-            await emailService.sendMessageAdmin({
-                nomcan,
-                prncan,
-                maican,
-
-            });
-        } catch (emailError) {
-            console.error('Erreur envoi email:', emailError);
-        }
+        
         res.json({ 
             success: true, 
             message: 'Message envoyé avec succès',
