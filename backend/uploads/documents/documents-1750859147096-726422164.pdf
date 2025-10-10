@@ -1,0 +1,271 @@
+Mock PDF Content for fiche-paie-Novembre-2024.pdf
+[
+  {
+    "type": "text",
+    "text": "TechCorp SARL",
+    "x": 20,
+    "y": 30
+  },
+  {
+    "type": "text",
+    "text": "123 Avenue des Champs-Élysées, 75008 Paris",
+    "x": 20,
+    "y": 40
+  },
+  {
+    "type": "text",
+    "text": "SIRET: 12345678901234",
+    "x": 20,
+    "y": 50
+  },
+  {
+    "type": "text",
+    "text": "BULLETIN DE PAIE",
+    "x": 20,
+    "y": 80
+  },
+  {
+    "type": "text",
+    "text": "Période: Novembre 2024",
+    "x": 20,
+    "y": 95
+  },
+  {
+    "type": "text",
+    "text": "INFORMATIONS SALARIE",
+    "x": 20,
+    "y": 115
+  },
+  {
+    "type": "text",
+    "text": "Nom: Jean Dupont",
+    "x": 20,
+    "y": 130
+  },
+  {
+    "type": "text",
+    "text": "Poste: Développeur Senior",
+    "x": 20,
+    "y": 140
+  },
+  {
+    "type": "text",
+    "text": "Département: Informatique",
+    "x": 20,
+    "y": 150
+  },
+  {
+    "type": "text",
+    "text": "N° Employé: EMP001",
+    "x": 20,
+    "y": 160
+  },
+  {
+    "type": "text",
+    "text": "N° Sécurité Sociale: 1 85 12 75 116 157 32",
+    "x": 20,
+    "y": 170
+  },
+  {
+    "type": "line",
+    "x1": 20,
+    "y1": 185,
+    "x2": 190,
+    "y2": 185
+  },
+  {
+    "type": "text",
+    "text": "LIBELLE",
+    "x": 20,
+    "y": 200
+  },
+  {
+    "type": "text",
+    "text": "BASE",
+    "x": 80,
+    "y": 200
+  },
+  {
+    "type": "text",
+    "text": "TAUX",
+    "x": 110,
+    "y": 200
+  },
+  {
+    "type": "text",
+    "text": "MONTANT",
+    "x": 150,
+    "y": 200
+  },
+  {
+    "type": "line",
+    "x1": 20,
+    "y1": 205,
+    "x2": 190,
+    "y2": 205
+  },
+  {
+    "type": "text",
+    "text": "Salaire de base",
+    "x": 20,
+    "y": 215
+  },
+  {
+    "type": "text",
+    "text": "22 jours",
+    "x": 80,
+    "y": 215
+  },
+  {
+    "type": "text",
+    "text": "159.09€",
+    "x": 110,
+    "y": 215
+  },
+  {
+    "type": "text",
+    "text": "3500.00€",
+    "x": 150,
+    "y": 215
+  },
+  {
+    "type": "text",
+    "text": "Heures supplémentaires",
+    "x": 20,
+    "y": 230
+  },
+  {
+    "type": "text",
+    "text": "12h",
+    "x": 80,
+    "y": 230
+  },
+  {
+    "type": "text",
+    "text": "35.00€",
+    "x": 110,
+    "y": 230
+  },
+  {
+    "type": "text",
+    "text": "420.00€",
+    "x": 150,
+    "y": 230
+  },
+  {
+    "type": "text",
+    "text": "Prime exceptionnelle",
+    "x": 20,
+    "y": 245
+  },
+  {
+    "type": "text",
+    "text": "-",
+    "x": 80,
+    "y": 245
+  },
+  {
+    "type": "text",
+    "text": "-",
+    "x": 110,
+    "y": 245
+  },
+  {
+    "type": "text",
+    "text": "200.00€",
+    "x": 150,
+    "y": 245
+  },
+  {
+    "type": "line",
+    "x1": 20,
+    "y1": 265,
+    "x2": 190,
+    "y2": 265
+  },
+  {
+    "type": "text",
+    "text": "TOTAL BRUT:",
+    "x": 20,
+    "y": 275
+  },
+  {
+    "type": "text",
+    "text": "4120.00€",
+    "x": 150,
+    "y": 275
+  },
+  {
+    "type": "text",
+    "text": "COTISATIONS ET CHARGES:",
+    "x": 20,
+    "y": 295
+  },
+  {
+    "type": "text",
+    "text": "Charges sociales salariales",
+    "x": 20,
+    "y": 310
+  },
+  {
+    "type": "text",
+    "text": "735.50€",
+    "x": 150,
+    "y": 310
+  },
+  {
+    "type": "text",
+    "text": "Assurance maladie",
+    "x": 20,
+    "y": 320
+  },
+  {
+    "type": "text",
+    "text": "170.00€",
+    "x": 150,
+    "y": 320
+  },
+  {
+    "type": "text",
+    "text": "Impôt sur le revenu",
+    "x": 20,
+    "y": 330
+  },
+  {
+    "type": "text",
+    "text": "380.00€",
+    "x": 150,
+    "y": 330
+  },
+  {
+    "type": "line",
+    "x1": 20,
+    "y1": 345,
+    "x2": 190,
+    "y2": 345
+  },
+  {
+    "type": "text",
+    "text": "NET A PAYER:",
+    "x": 20,
+    "y": 360
+  },
+  {
+    "type": "text",
+    "text": "2834.50€",
+    "x": 150,
+    "y": 360
+  },
+  {
+    "type": "text",
+    "text": "Document généré le 16/06/2025",
+    "x": 20,
+    "y": 280
+  },
+  {
+    "type": "text",
+    "text": "Conservez ce bulletin de paie sans limitation de durée",
+    "x": 20,
+    "y": 290
+  }
+]
