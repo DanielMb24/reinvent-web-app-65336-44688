@@ -246,7 +246,18 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                                                     onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
                                                     placeholder="Note sur 20"
                                                     className="mt-2"
+                                                /> <Input
+                                                    id={`note-${matiere.id}`}
+                                                    type="number"
+                                                    min="0"
+
+
+                                                    value={note?.note ?? ''}
+                                                    onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
+                                                    placeholder="Note sur 20"
+                                                    className="mt-2"
                                                 />
+
                                             </div>
                                             <Button
                                                 onClick={() => saveNote(matiere.id)}

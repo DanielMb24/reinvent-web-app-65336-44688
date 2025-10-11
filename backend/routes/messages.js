@@ -65,7 +65,7 @@ router.get('/admin', async (req, res) => {
 // Envoyer un message (candidat)
 router.post('/candidat', async (req, res) => {
     try {
-        const { nupcan, sujet, message } = req.body;
+        const { nupcan, sujet, message,admin_id } = req.body;
         
         if (!nupcan || !sujet || !message) {
             return res.status(400).json({ 
@@ -93,8 +93,8 @@ router.post('/candidat', async (req, res) => {
         
         const [result] = await connection.execute(
             `INSERT INTO messages (candidat_nupcan, sujet, message, admin_id, expediteur, statut, created_at)
-             VALUES (?, ?, ?, NULL, 'candidat', 'non_lu', NOW())`,
-            [nupcan, sujet, message]
+             VALUES (?, ?, ?, ?, 'candidat', 'non_lu', NOW())`,
+            [nupcan, sujet, message,admin_id]
         );
         
         // Envoyer notification email aux admins
