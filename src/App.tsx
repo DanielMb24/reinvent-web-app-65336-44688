@@ -45,6 +45,7 @@ import Support from './components/Support';
 import CandidatDashboard from '@/pages/CandidatDashboard';
 import CandidatDetail from '@/pages/admin/CandidatDetail';
 import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
+import Dashboard from './pages/admin/Dashboard';
 
 
 const queryClient = new QueryClient({
@@ -115,9 +116,10 @@ function App() {
                                 </AdminProtectedRoute>
                             }
                         >
+
                             <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
 
-                            <Route path="dashboard" element={<AdminDashboard/>}/>
+                            <Route path="dashboard" element={<Dashboard/>}/>
                             <Route path="concours" element={<ConcoursBasedDashboard/>}/>
                             <Route path="candidats" element={<AdminCandidats/>}/>
                             <Route path="candidats/:nupcan" element={<CandidateManagement/>}/>

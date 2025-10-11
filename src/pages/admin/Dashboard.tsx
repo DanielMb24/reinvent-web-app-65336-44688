@@ -2,6 +2,7 @@ import React from 'react';
 import {useAdminAuth} from '@/contexts/AdminAuthContext';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import AdminEtablissementDashboard from './AdminEtablissementDashboard';
+import DashboardAdmin from "@/pages/admin/DashboardAdmin.tsx";
 
 const Dashboard = () => {
     const {admin} = useAdminAuth();
@@ -19,7 +20,7 @@ const Dashboard = () => {
         return <SuperAdminDashboard/>;
     }
 
-    return <AdminEtablissementDashboard/>;
+    return <DashboardAdmin/>;
 };
 
 export default Dashboard;
