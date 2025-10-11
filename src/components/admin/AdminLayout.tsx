@@ -1,7 +1,6 @@
-
-import React, { memo } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React, {memo} from 'react';
+import {Outlet, Link, useLocation} from 'react-router-dom';
+import {Button} from '@/components/ui/button';
 import {
     Home,
     Trophy,
@@ -17,22 +16,20 @@ import {
     GraduationCap,
     BookOpen
 } from 'lucide-react';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
+import {useAdminAuth} from '@/contexts/AdminAuthContext';
 
 interface AdminLayoutProps {
     children?: React.ReactNode;
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = memo(({ children }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = memo(({children}) => {
     const location = useLocation();
-    const { admin, logout } = useAdminAuth();
+    const {admin, logout} = useAdminAuth();
 
-    const menuItems = [
-
-    ];
+    const menuItems = [];
 
     const isActive = (path: string) => {
-        if (path === '/admin') {
+        if (path === '/admin/dashboard') {
             return location.pathname === '/admin' || location.pathname === '/admin/dashboard';
         }
         return location.pathname.startsWith(path);
@@ -60,7 +57,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({ children }) => {
                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                             }`}
                         >
-                            <item.icon className="h-5 w-5" />
+                            <item.icon className="h-5 w-5"/>
                             <span>{item.label}</span>
                         </Link>
                     ))}
@@ -83,12 +80,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({ children }) => {
                         </div>
                     </div>
                     <Button variant="ghost" className="w-full justify-start" onClick={logout}>
-                        <LogOut className="h-4 w-4 mr-2" />
+                        <LogOut className="h-4 w-4 mr-2"/>
                         Déconnexion
                     </Button>
                     <Button variant="ghost" className="w-full justify-start mt-2" asChild>
                         <Link to="/">
-                            <Home className="h-4 w-4 mr-2" />
+                            <Home className="h-4 w-4 mr-2"/>
                             Retour au site
                         </Link>
                     </Button>
@@ -114,7 +111,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({ children }) => {
                 </header>
 
                 <main className="flex-1 p-6">
-                    {children || <Outlet />}
+                    {children || <Outlet/>}
                 </main>
             </div>
         </div>

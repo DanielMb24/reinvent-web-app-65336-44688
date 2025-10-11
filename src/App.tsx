@@ -120,7 +120,7 @@ function App() {
                             <Route path="dashboard" element={<AdminDashboard/>}/>
                             <Route path="concours" element={<ConcoursBasedDashboard/>}/>
                             <Route path="candidats" element={<AdminCandidats/>}/>
-                            <Route path="candidats/:nupcan" element={<CandidatDetail/>}/>
+                            <Route path="candidats/:nupcan" element={<CandidateManagement/>}/>
                             <Route path="etablissements" element={<AdminEtablissements/>}/>
                             <Route path="dossiers" element={<AdminDossiers/>}/>
                             <Route path="paiements" element={<AdminPaiements/>}/>

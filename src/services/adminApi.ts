@@ -1,7 +1,41 @@
 import axios from 'axios';
+import {ApiResponse} from "@/services/api.ts";
 
 const BASE_URL = 'http://localhost:3001/api/admin';
 const BASE_URL2 = 'http://localhost:3001/api';
+
+ async function makeRequest<T>(url: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE', data?: any): Promise<ApiResponse<T>> {
+    try {
+        const token = localStorage.getItem('adminToken');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const response = await axios({
+            method,
+            url: `${this.baseURL}${url}`,
+            data,
+            headers
+        });
+
+        return response.data;
+    } catch (error: any) {
+        console.error(`Erreur lors de la requête ${method} vers ${url}:`, error);
+
+        if (axios.isAxiosError(error)) {
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message,
+                errors: error.response?.data?.errors || [error.message]
+            };
+        }
+
+        return {
+            success: false,
+            message: 'Erreur inconnue',
+            errors: [error.message]
+        };
+    }
+}
+
 
 export const adminApiService = {
     // Authentification
@@ -242,16 +276,14 @@ export const adminApiService = {
         }
     },
 
-    getCandidatsByConcours: async (concoursId: string | number) => {
-        try {
-            const token = adminApiService.getToken();
-            const response = await axios.get(`${BASE_URL}/concours/${concoursId}/candidats`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            return { success: true, data: response.data, message: '' };
-        } catch (error: any) {
-            console.error('Erreur récupération candidats concours:', error);
-            throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des candidats du concours');
-        }
+    async getCandidatsByConcours(concoursId: string | number): Promise<ApiResponse<any[]>> {
+        const response = await makeRequest<any[]>(`/concours/${concoursId}/candidats`, 'GET');
+        return {
+            success: response.success || false,
+            data: response.data || [],
+            message: response.message || '',
+            errors: response.errors
+        };
     }
+
 };

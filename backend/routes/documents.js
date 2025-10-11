@@ -200,7 +200,7 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
         // Mettre à jour le document avec le nouveau fichier
         const connection = require('../config/database').getConnection();
         await connection.execute(
-            'UPDATE documents SET nom_fichier = ?, statut = ?, commentaire_validation = ?, updated_at = NOW() WHERE id = ?',
+            'UPDATE documents SET nom_fichier = ?, statut = ?, commentaire = ?, updated_at = NOW() WHERE id = ?',
             [req.file.filename, 'en_attente', 'Document remplacé - en attente de validation', id]
         );
 

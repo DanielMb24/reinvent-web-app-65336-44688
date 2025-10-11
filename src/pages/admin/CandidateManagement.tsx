@@ -26,6 +26,8 @@ import CandidatePhotoCard from '@/components/admin/CandidatePhotoCard';
 import {useAdminState} from '@/hooks/useAdminState';
 import {useAdminAuth} from '@/contexts/AdminAuthContext'; // Ajouté pour accéder au rôle
 import {apiService} from '@/services/api';
+import NotesManager from "@/components/admin/NotesManager.tsx";
+import {id} from "date-fns/locale";
 
 const CandidateManagement = () => {
     const {nupcan} = useParams();
@@ -222,6 +224,16 @@ const CandidateManagement = () => {
                     >
                         Documents
                     </button>
+                    <button
+                        onClick={() => setActiveTab('notes')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activeTab === 'notes'
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        Notes
+                    </button>
                 </nav>
             </div>
 
@@ -403,6 +415,23 @@ const CandidateManagement = () => {
                     }}
                     onDocumentValidated={() => refetch()}
                 />
+            )}
+
+            {activeTab === 'notes' &&
+               ( candidat.id && candidat.concours_id )? (
+                        <NotesManager
+                            candidatId={candidat.id}
+                            candidatNom={candidat.nomcan}
+                            candidatPrenom={candidat.prncan}
+                            concoursId={candidat.concours_id}
+                        />
+                    ) : (
+                        <Card>
+                            <CardContent className="p-8 text-center text-muted-foreground">
+                                <p></p>
+                            </CardContent>
+                        </Card>
+
             )}
         </div>
     );

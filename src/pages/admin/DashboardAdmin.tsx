@@ -30,16 +30,9 @@ import {adminCandidatureService} from "@/services/adminCandidatureService.ts";
 import {useAdminAuth} from "@/contexts/AdminAuthContext.tsx";
 import {adminConcoursService} from "@/services/adminConcoursService.ts";
 import {Message} from "postcss";
-interface ConcoursData {
-    id: number;
-    libcnc: string;
-    fracnc: number;
-    sescnc: string;
-    etablissement_id: number;
-    candidats_count: number;
-    documents_en_attente: number;
-    paiements_valides: number;
-}
+import ConcoursDetails from "@/pages/ConcoursDetails.tsx";
+import Concours from "@/pages/Concours.tsx";
+import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
 
 // Composant wrapper pour DocumentValidation
 const DocumentValidationTab: React.FC = () => {
@@ -97,11 +90,9 @@ interface DashboardStats {
 const DashboardAdmin: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'overview' | 'candidats' | 'documents' | 'notes' | 'messages'>('overview');
-    const [selectedConcours] = useState<number | null>(null);
+    const [selectedConcours, setSelectedConcours] = useState<number | null>(null);
     const {admin, token, isLoading} = useAdminAuth();
-   
-    const [setSelectedConcours] = useState<ConcoursData | null>(null);
-
+    // ✅ Définir ici l'objet par défaut
     const { data: messages } = useQuery<Message[]>({
         queryKey: ['admin-messages'],
         queryFn: async () => {
@@ -205,10 +196,6 @@ const DashboardAdmin: React.FC = () => {
     }
 
 
-    const handleViewConcours = (concours: ConcoursData) => {
-        setSelectedConcours(concours);
-    };
-
     return (
 
             <div className="p-8">
@@ -222,9 +209,9 @@ const DashboardAdmin: React.FC = () => {
                 <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-                        <TabsTrigger value="candidats">Candidats</TabsTrigger>
-                        <TabsTrigger value="documents">Documents</TabsTrigger>
-                        <TabsTrigger value="notes">Notes</TabsTrigger>
+                        <TabsTrigger value="concours">Concours</TabsTrigger>
+                        {/*<TabsTrigger value="documents">Documents</TabsTrigger>*/}
+                        {/*<TabsTrigger value="notes">Notes</TabsTrigger>*/}
                         <TabsTrigger value="messages">Messages</TabsTrigger>
 
                     </TabsList>
@@ -318,7 +305,7 @@ const DashboardAdmin: React.FC = () => {
                                             <Card
                                                 key={concours.id}
                                                 className="cursor-pointer hover:border-primary transition-colors"
-                                                onClick={() => handleViewConcours(concours)}
+                                                onClick={() => setSelectedConcours(concours.id)}
                                             >
                                                 <CardHeader>
                                                     <CardTitle className="text-lg">{concours.libcnc}</CardTitle>
@@ -410,17 +397,17 @@ const DashboardAdmin: React.FC = () => {
 
                     </TabsContent>
 
-                    <TabsContent value="candidats">
-                        <CandidatesList concoursFilter={selectedConcours} />
+                    <TabsContent value="concours">
+                        <ConcoursBasedDashboard  />
                     </TabsContent>
 
-                    <TabsContent value="documents">
-                        <DocumentValidationTab />
-                    </TabsContent>
+                    {/*<TabsContent value="documents">*/}
+                    {/*    <DocumentValidationTab />*/}
+                    {/*</TabsContent>*/}
 
-                    <TabsContent value="notes">
-                        <GradeManagement concoursFilter={selectedConcours} />
-                    </TabsContent>
+                    {/*<TabsContent value="notes">*/}
+                    {/*    <GradeManagement concoursFilter={selectedConcours} />*/}
+                    {/*</TabsContent>*/}
 
                     <TabsContent value="messages">
                         <MessagerieAdmin />

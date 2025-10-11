@@ -26,16 +26,30 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
                                                                            }) => {
     const [selectedDocument, setSelectedDocument] = useState<AdminDocumentData | null>(null);
     const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
+    const [validationType, setValidationType] = useState<'valide' | 'rejete'>('valide');
+
     const queryClient = useQueryClient();
 
     const [searchTerm, setSearchTerm] = useState('');
     // Récupérer les documents du candidat
+    const getStatusBadge = (statut: string) => {
+        switch (statut) {
+            case 'valide':
+                return <Badge className="bg-green-100 text-green-800">Validé</Badge>;
+            case 'rejete':
+                return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
+            default:
+                return <Badge className="bg-orange-100 text-orange-800">En attente</Badge>;
+        }
+    };
     const {data: documents, isLoading} = useQuery({
         queryKey: ['candidat-documents', candidatNupcan],
         queryFn: () => adminDocumentService.getCandidatDocuments(candidatNupcan),
     });
 
     // Mutation pour valider un document
+
+
     const validateDocumentMutation = useMutation({
         mutationFn: ({documentId, statut, commentaire}: {
             documentId: number;
@@ -47,6 +61,7 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
             onDocumentValidated?.();
         },
     });
+
 
     const handleValidateDocument = async (
         documentId: number,
@@ -86,20 +101,7 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
     // });
 
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'valide':
-                return <Badge className="bg-green-100 text-green-800"><CheckCircle
-                    className="h-3 w-3 mr-1"/>Validé</Badge>;
-            case 'rejete':
-                return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1"/>Rejeté</Badge>;
-            case 'en_attente':
-                return <Badge className="bg-orange-100 text-orange-800"><Clock className="h-3 w-3 mr-1"/>En
-                    attente</Badge>;
-            default:
-                return <Badge variant="secondary">Inconnu</Badge>;
-        }
-    };
+
 
     if (isLoading) {
         return (

@@ -40,8 +40,8 @@ const DocumentValidation: React.FC<DocumentValidationProps> = ({
                                                                }) => {
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
     const [validationDialog, setValidationDialog] = useState(false);
-    const [validationType, setValidationType] = useState<'valide' | 'rejete'>('valide');
-    const [comment, setComment] = useState('');
+     const [validationType, setValidationType] = useState<'valide' | 'rejete'>('valide');
+   const [comment, setComment] = useState('');
     const [validating, setValidating] = useState(false);
 
     const getStatusBadge = (statut: string) => {

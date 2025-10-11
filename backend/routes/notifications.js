@@ -6,7 +6,7 @@ const pool = mysql.createPool({
     host: '127.0.0.1',
     user: 'root', // Remplace par ton utilisateur MySQL
     password: '', // Remplace par ton mot de passe MySQL si nécessaire
-    database: 'gabconcoursv1',
+    database: 'gabconcoursv5',
     port: 3306,
     waitForConnections: true,
     connectionLimit: 10,
@@ -88,16 +88,16 @@ router.put('/:notificationId/read', async (req, res) => {
 
 router.post('/send', async (req, res) => {
     try {
-        const {email, subject, message, candidat, type, data} = req.body;
+        const {maican, subject, message, candidat, type, data} = req.body;
 
-        if (!email || !subject || !message) {
+        if (!maican || !subject || !message) {
             return res.status(400).json({
                 success: false,
                 message: 'Email, sujet et message sont requis',
             });
         }
 
-        console.log('Tentative d\'envoi de notification:', {email, subject, candidat, type});
+        console.log('Tentative d\'envoi de notification:', {maican, subject, candidat, type});
 
         const connection = await pool.getConnection();
         await connection.execute(

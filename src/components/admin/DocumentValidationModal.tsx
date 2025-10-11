@@ -4,9 +4,10 @@ import {Button} from '@/components/ui/button';
 import {Textarea} from '@/components/ui/textarea';
 import {Label} from '@/components/ui/label';
 import {Badge} from '@/components/ui/badge';
-import {CheckCircle, XCircle, FileText, User, Calendar} from 'lucide-react';
+import {CheckCircle, XCircle, FileText, User, Calendar, Eye} from 'lucide-react';
 import {toast} from '@/hooks/use-toast';
 import {receiptService} from '@/services/receiptService';
+import DocumentViewer from "@/components/DocumentViewer.tsx";
 
 interface DocumentValidationModalProps {
     document: any;
@@ -29,6 +30,8 @@ const DocumentValidationModal: React.FC<DocumentValidationModalProps> = ({
                                                                              isValidating,
                                                                              candidatInfo
                                                                          }) => {
+
+    const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
     const [validationType, setValidationType] = useState<'valide' | 'rejete' | null>(null);
     const [commentaire, setCommentaire] = useState('');
 
@@ -134,14 +137,24 @@ const DocumentValidationModal: React.FC<DocumentValidationModalProps> = ({
                         </div>
                     </div>
 
+
+
+
                     {/* Zone de prévisualisation */}
-                    <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px] flex items-center justify-center">
-                        <div className="text-center">
-                            <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4"/>
-                            <p className="text-gray-500 mb-2">Prévisualisation du document</p>
+                    <Button className="borderb text-gray-400 mx-auto mb-4 rounded-lg p-4 bg-gray-50 min-h-[200px] flex items-center justify-center"
+
+                             onClick={() => setSelectedDocument(document)}>
+                                <Eye className="h-14  mr-2  w-16 " /> Voir
+
                             <p className="text-sm text-gray-400">{document.nomdoc}</p>
-                        </div>
-                    </div>
+
+            </Button>
+
+                    <DocumentViewer
+                        isOpen={!!selectedDocument}
+                        onClose={() => setSelectedDocument(null)}
+                        document={selectedDocument || null}
+                    />
 
                     {/* Commentaire pour la validation */}
                     <div className="space-y-2">
