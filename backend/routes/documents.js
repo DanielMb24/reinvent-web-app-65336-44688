@@ -199,15 +199,29 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
 
         // Mettre à jour le document avec le nouveau fichier
         const connection = require('../config/database').getConnection();
+        
+        // Récupérer le type de document
+        const [docInfo] = await connection.execute(
+            'SELECT type_document FROM documents WHERE id = ?',
+            [id]
+        );
+        
+        if (docInfo.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document non trouvé'
+            });
+        }
+        
         await connection.execute(
             'UPDATE documents SET nom_fichier = ?, statut = ?, commentaire = ?, updated_at = NOW() WHERE id = ?',
             [req.file.filename, 'en_attente', 'Document remplacé - en attente de validation', id]
         );
 
-        // Mettre à jour le dossier associé
+        // Mettre à jour le dossier associé  
         await connection.execute(
-            'UPDATE dossiers SET docdsr = ?, updated_at = NOW() WHERE document_id = ?',
-            [req.file.filename, id]
+            'UPDATE dossiers SET docdsr = ?, typdsr = ?, updated_at = NOW() WHERE candidat_nupcan = (SELECT candidat_nupcan FROM documents WHERE id = ?) AND typdsr = ?',
+            [req.file.filename, docInfo[0].type_document, id, docInfo[0].type_document]
         );
 
         const updatedDocument = await Document.findById(id);

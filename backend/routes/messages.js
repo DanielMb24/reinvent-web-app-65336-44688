@@ -29,26 +29,35 @@ router.get('/candidat/:nupcan', async (req, res) => {
     }
 });
 
-// Récupérer tous les messages (admin)
+// Récupérer tous les messages (admin) - filtrés par établissement
 router.get('/admin', async (req, res) => {
     try {
         const connection = getConnection();
-        const { concours_id } = req.query;
+        const { concours_id, etablissement_id } = req.query;
         
         let query = `
             SELECT m.*, 
                    c.nomcan, c.prncan, c.maican, c.concours_id,
                    a.nom as admin_nom, a.prenom as admin_prenom,
-                   con.libcnc
+                   con.libcnc,
+                   con.etablissement_id
             FROM messages m
             LEFT JOIN candidats c ON m.candidat_nupcan = c.nupcan
             LEFT JOIN administrateurs a ON m.admin_id = a.id
             LEFT JOIN concours con ON c.concours_id = con.id
+            WHERE m.expediteur = 'candidat'
         `;
         
         const params = [];
+        
+        // Filtrer par établissement (important pour les admins)
+        if (etablissement_id) {
+            query += ' AND con.etablissement_id = ?';
+            params.push(etablissement_id);
+        }
+        
         if (concours_id) {
-            query += ' WHERE c.concours_id = ?';
+            query += ' AND c.concours_id = ?';
             params.push(concours_id);
         }
         

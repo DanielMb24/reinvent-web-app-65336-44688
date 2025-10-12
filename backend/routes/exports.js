@@ -1,213 +1,295 @@
 const express = require('express');
 const router = express.Router();
-const { getConnection } = require('../config/database');
 const ExcelJS = require('exceljs');
-const PDFDocument = require('pdfkit');
+const { getConnection } = require('../config/database');
+const { authenticateAdmin } = require('../middleware/auth');
 
-// GET /api/exports/candidats/excel - Export Excel des candidats
-router.get('/candidats/excel', async (req, res) => {
+// Export candidatures par concours (filtré par établissement)
+router.get('/candidatures/concours/:concours_id', async (req, res) => {
     try {
-        const { concours_id } = req.query;
+        const { concours_id } = req.params;
+        const { etablissement_id } = req.query;
+        
         const connection = getConnection();
         
+        // Vérifier que le concours appartient à l'établissement de l'admin
         let query = `
             SELECT 
-                c.nupcan, c.nomcan, c.prncan, c.maican, c.telcan,
-                c.dtncan, c.ldncan, c.proorg,
-                con.libcnc, f.nomfil, e.nomets, n.nomniv,
-                p.statut as statut_paiement, p.montant,
-                d.statut as statut_documents
+                c.nupcan,
+                c.nomcan,
+                c.prncan,
+                c.maican,
+                c.telcan,
+                c.sexcan,
+                c.dtncan,
+                f.nomfil as filiere,
+                con.libcnc as concours,
+                e.nomets as etablissement,
+                c.created_at as date_inscription
             FROM candidats c
-            LEFT JOIN concours con ON c.concours_id = con.id
             LEFT JOIN filieres f ON c.filiere_id = f.id
+            LEFT JOIN concours con ON c.concours_id = con.id
             LEFT JOIN etablissements e ON con.etablissement_id = e.id
-            LEFT JOIN niveaux n ON c.niveau_id = n.id
-            LEFT JOIN paiements p ON c.nupcan = p.nupcan
-            LEFT JOIN (
-                SELECT dos.nipcan, GROUP_CONCAT(doc.statut) as statut
-                FROM dossiers dos
-                LEFT JOIN documents doc ON dos.document_id = doc.id
-                GROUP BY dos.nipcan
-            ) d ON c.nupcan = d.nipcan
+            WHERE c.concours_id = ?
         `;
         
-        const params = [];
-        if (concours_id) {
-            query += ' WHERE c.concours_id = ?';
-            params.push(concours_id);
+        const params = [concours_id];
+        
+        if (etablissement_id) {
+            query += ' AND con.etablissement_id = ?';
+            params.push(etablissement_id);
         }
+        
+        query += ' ORDER BY c.created_at DESC';
         
         const [candidats] = await connection.execute(query, params);
         
-        // Créer le workbook Excel
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Candidats');
+        if (candidats.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Aucune candidature trouvée'
+            });
+        }
         
-        // Définir les colonnes
+        // Créer le fichier Excel
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Candidatures');
+        
+        // En-tête
         worksheet.columns = [
             { header: 'NUPCAN', key: 'nupcan', width: 15 },
             { header: 'Nom', key: 'nomcan', width: 20 },
             { header: 'Prénom', key: 'prncan', width: 20 },
             { header: 'Email', key: 'maican', width: 30 },
             { header: 'Téléphone', key: 'telcan', width: 15 },
+            { header: 'Sexe', key: 'sexcan', width: 10 },
             { header: 'Date de naissance', key: 'dtncan', width: 15 },
-            { header: 'Lieu de naissance', key: 'ldncan', width: 20 },
-            { header: 'Province', key: 'proorg', width: 15 },
-            { header: 'Concours', key: 'libcnc', width: 30 },
-            { header: 'Filière', key: 'nomfil', width: 25 },
-            { header: 'Établissement', key: 'nomets', width: 30 },
-            { header: 'Niveau', key: 'nomniv', width: 20 },
-            { header: 'Statut Paiement', key: 'statut_paiement', width: 15 },
-            { header: 'Montant', key: 'montant', width: 10 },
-            { header: 'Statut Documents', key: 'statut_documents', width: 20 }
+            { header: 'Filière', key: 'filiere', width: 25 },
+            { header: 'Concours', key: 'concours', width: 30 },
+            { header: 'Établissement', key: 'etablissement', width: 30 },
+            { header: 'Date inscription', key: 'date_inscription', width: 20 }
         ];
         
-        // Ajouter les données
-        candidats.forEach(candidat => {
-            worksheet.addRow(candidat);
-        });
-        
         // Style de l'en-tête
-        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
         worksheet.getRow(1).fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' }
+            fgColor: { argb: 'FF2563EB' }
         };
         
-        // Envoyer le fichier
+        // Ajouter les données
+        candidats.forEach(candidat => {
+            worksheet.addRow({
+                nupcan: candidat.nupcan,
+                nomcan: candidat.nomcan,
+                prncan: candidat.prncan,
+                maican: candidat.maican,
+                telcan: candidat.telcan,
+                sexcan: candidat.sexcan,
+                dtncan: candidat.dtncan ? new Date(candidat.dtncan).toLocaleDateString('fr-FR') : '',
+                filiere: candidat.filiere || 'N/A',
+                concours: candidat.concours,
+                etablissement: candidat.etablissement,
+                date_inscription: candidat.date_inscription ? new Date(candidat.date_inscription).toLocaleDateString('fr-FR') : ''
+            });
+        });
+        
+        // Générer le fichier
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=candidats_${Date.now()}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename="candidatures_concours_${concours_id}_${Date.now()}.xlsx"`);
         
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('Erreur export Excel:', error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Erreur export candidatures:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 
-// GET /api/exports/candidats/pdf - Export PDF des candidats
-router.get('/candidats/pdf', async (req, res) => {
+// Export candidatures par filière (filtré par établissement)
+router.get('/candidatures/filiere/:filiere_id', async (req, res) => {
     try {
-        const { concours_id } = req.query;
+        const { filiere_id } = req.params;
+        const { etablissement_id, concours_id } = req.query;
+        
         const connection = getConnection();
         
         let query = `
             SELECT 
-                c.nupcan, c.nomcan, c.prncan, c.maican,
-                con.libcnc, f.nomfil, e.nomets,
-                p.statut as statut_paiement
+                c.nupcan,
+                c.nomcan,
+                c.prncan,
+                c.maican,
+                c.telcan,
+                c.sexcan,
+                c.dtncan,
+                f.nomfil as filiere,
+                con.libcnc as concours,
+                e.nomets as etablissement,
+                c.created_at as date_inscription
             FROM candidats c
-            LEFT JOIN concours con ON c.concours_id = con.id
             LEFT JOIN filieres f ON c.filiere_id = f.id
+            LEFT JOIN concours con ON c.concours_id = con.id
             LEFT JOIN etablissements e ON con.etablissement_id = e.id
-            LEFT JOIN paiements p ON c.nupcan = p.nupcan
+            WHERE c.filiere_id = ?
         `;
         
-        const params = [];
+        const params = [filiere_id];
+        
+        if (etablissement_id) {
+            query += ' AND con.etablissement_id = ?';
+            params.push(etablissement_id);
+        }
+        
         if (concours_id) {
-            query += ' WHERE c.concours_id = ?';
+            query += ' AND c.concours_id = ?';
             params.push(concours_id);
         }
+        
+        query += ' ORDER BY c.created_at DESC';
         
         const [candidats] = await connection.execute(query, params);
         
-        // Créer le document PDF
-        const doc = new PDFDocument({ margin: 50 });
-        
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=candidats_${Date.now()}.pdf`);
-        
-        doc.pipe(res);
-        
-        // Titre
-        doc.fontSize(20).text('Liste des Candidats', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).text(`Date d'export: ${new Date().toLocaleDateString('fr-FR')}`, { align: 'center' });
-        doc.moveDown(2);
-        
-        // Table des candidats
-        doc.fontSize(10);
-        candidats.forEach((candidat, index) => {
-            if (index > 0 && index % 10 === 0) {
-                doc.addPage();
-            }
-            
-            doc.text(`${index + 1}. ${candidat.nomcan} ${candidat.prncan}`, { continued: false });
-            doc.fontSize(8).text(`   NUPCAN: ${candidat.nupcan} | Email: ${candidat.maican}`, { continued: false });
-            doc.text(`   Concours: ${candidat.libcnc || 'N/A'} | Filière: ${candidat.nomfil || 'N/A'}`, { continued: false });
-            doc.text(`   Établissement: ${candidat.nomets || 'N/A'} | Paiement: ${candidat.statut_paiement || 'en_attente'}`, { continued: false });
-            doc.moveDown();
-        });
-        
-        doc.end();
-    } catch (error) {
-        console.error('Erreur export PDF:', error);
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// GET /api/exports/notes/excel - Export Excel des notes
-router.get('/notes/excel', async (req, res) => {
-    try {
-        const { concours_id } = req.query;
-        const connection = getConnection();
-        
-        let query = `
-            SELECT 
-                c.nupcan, c.nomcan, c.prncan,
-                con.libcnc, m.nommat, m.coefmat,
-                n.note
-            FROM notes n
-            LEFT JOIN participations p ON n.participation_id = p.id
-            LEFT JOIN candidats c ON p.candidat_id = c.id
-            LEFT JOIN concours con ON p.concours_id = con.id
-            LEFT JOIN matieres m ON n.matiere_id = m.id
-        `;
-        
-        const params = [];
-        if (concours_id) {
-            query += ' WHERE p.concours_id = ?';
-            params.push(concours_id);
+        if (candidats.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Aucune candidature trouvée'
+            });
         }
         
-        query += ' ORDER BY c.nomcan, m.nommat';
-        
-        const [notes] = await connection.execute(query, params);
-        
+        // Créer le fichier Excel
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Notes');
+        const worksheet = workbook.addWorksheet('Candidatures par Filière');
         
         worksheet.columns = [
             { header: 'NUPCAN', key: 'nupcan', width: 15 },
             { header: 'Nom', key: 'nomcan', width: 20 },
             { header: 'Prénom', key: 'prncan', width: 20 },
-            { header: 'Concours', key: 'libcnc', width: 30 },
-            { header: 'Matière', key: 'nommat', width: 25 },
-            { header: 'Coefficient', key: 'coefmat', width: 12 },
-            { header: 'Note', key: 'note', width: 10 }
+            { header: 'Email', key: 'maican', width: 30 },
+            { header: 'Téléphone', key: 'telcan', width: 15 },
+            { header: 'Sexe', key: 'sexcan', width: 10 },
+            { header: 'Date de naissance', key: 'dtncan', width: 15 },
+            { header: 'Filière', key: 'filiere', width: 25 },
+            { header: 'Concours', key: 'concours', width: 30 },
+            { header: 'Établissement', key: 'etablissement', width: 30 },
+            { header: 'Date inscription', key: 'date_inscription', width: 20 }
         ];
         
-        notes.forEach(note => {
-            worksheet.addRow(note);
-        });
-        
-        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
         worksheet.getRow(1).fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' }
+            fgColor: { argb: 'FF2563EB' }
         };
         
+        candidats.forEach(candidat => {
+            worksheet.addRow({
+                nupcan: candidat.nupcan,
+                nomcan: candidat.nomcan,
+                prncan: candidat.prncan,
+                maican: candidat.maican,
+                telcan: candidat.telcan,
+                sexcan: candidat.sexcan,
+                dtncan: candidat.dtncan ? new Date(candidat.dtncan).toLocaleDateString('fr-FR') : '',
+                filiere: candidat.filiere || 'N/A',
+                concours: candidat.concours,
+                etablissement: candidat.etablissement,
+                date_inscription: candidat.date_inscription ? new Date(candidat.date_inscription).toLocaleDateString('fr-FR') : ''
+            });
+        });
+        
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=notes_${Date.now()}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename="candidatures_filiere_${filiere_id}_${Date.now()}.xlsx"`);
         
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('Erreur export notes Excel:', error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Erreur export candidatures filière:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// Export résultats par concours (filtré par établissement)
+router.get('/resultats/concours/:concours_id', async (req, res) => {
+    try {
+        const { concours_id } = req.params;
+        const { etablissement_id } = req.query;
+        
+        const connection = getConnection();
+        
+        let query = `
+            SELECT 
+                c.nupcan,
+                c.nomcan,
+                c.prncan,
+                c.maican,
+                f.nomfil as filiere,
+                con.libcnc as concours,
+                n.note,
+                m.nom_matiere,
+                m.coefficient
+            FROM candidats c
+            LEFT JOIN filieres f ON c.filiere_id = f.id
+            LEFT JOIN concours con ON c.concours_id = con.id
+            LEFT JOIN notes n ON c.id = n.candidat_id
+            LEFT JOIN matieres m ON n.matiere_id = m.id
+            WHERE c.concours_id = ?
+        `;
+        
+        const params = [concours_id];
+        
+        if (etablissement_id) {
+            query += ' AND con.etablissement_id = ?';
+            params.push(etablissement_id);
+        }
+        
+        query += ' ORDER BY c.nomcan, m.nom_matiere';
+        
+        const [resultats] = await connection.execute(query, params);
+        
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Résultats');
+        
+        worksheet.columns = [
+            { header: 'NUPCAN', key: 'nupcan', width: 15 },
+            { header: 'Nom', key: 'nomcan', width: 20 },
+            { header: 'Prénom', key: 'prncan', width: 20 },
+            { header: 'Email', key: 'maican', width: 30 },
+            { header: 'Filière', key: 'filiere', width: 25 },
+            { header: 'Matière', key: 'nom_matiere', width: 25 },
+            { header: 'Note', key: 'note', width: 10 },
+            { header: 'Coefficient', key: 'coefficient', width: 12 }
+        ];
+        
+        worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF2563EB' }
+        };
+        
+        resultats.forEach(res => {
+            worksheet.addRow(res);
+        });
+        
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="resultats_concours_${concours_id}_${Date.now()}.xlsx"`);
+        
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        console.error('Erreur export résultats:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 });
 

@@ -211,6 +211,8 @@ router.post('/envoyer-resultats', authenticateAdmin, async (req, res) => {
             });
         }
         
+        const connection = getConnection();
+        
         // Récupérer les informations du candidat
         const candidat = await Candidat.findById(candidat_id);
         if (!candidat) {
@@ -222,53 +224,120 @@ router.post('/envoyer-resultats', authenticateAdmin, async (req, res) => {
         
         // Récupérer les notes et la moyenne
         const notes = await Note.findByCandidatAndConcours(candidat_id, concours_id);
-        const moyenne = await Note.calculateMoyenne(candidat_id, concours_id);
+        const moyenneData = await Note.calculateMoyenne(candidat_id, concours_id);
         
-        // Envoyer email
+        // Récupérer les infos du concours
+        const [concours] = await connection.execute(
+            'SELECT libcnc, sescnc FROM concours WHERE id = ?',
+            [concours_id]
+        );
+        
+        // Envoyer email avec nodemailer
         const nodemailer = require('nodemailer');
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: process.env.SMTP_PORT || 587,
+            secure: false,
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                user: process.env.SMTP_USER || process.env.EMAIL_USER,
+                pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
             }
         });
         
-        let notesHtml = '<table border="1" style="border-collapse: collapse; width: 100%;">';
-        notesHtml += '<tr><th>Matière</th><th>Note</th><th>Coefficient</th></tr>';
+        let notesHtml = `
+            <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
+                <thead>
+                    <tr style="background: #2563eb; color: white;">
+                        <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">Matière</th>
+                        <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Note</th>
+                        <th style="padding: 12px; border: 1px solid #ddd; text-align: center;">Coefficient</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
         notes.forEach(note => {
-            notesHtml += `<tr><td>${note.nom_matiere}</td><td>${note.note}/20</td><td>${note.coefficient}</td></tr>`;
+            notesHtml += `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">${note.nom_matiere}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center;"><strong>${note.note}/20</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${note.coefficient}</td>
+                </tr>
+            `;
         });
-        notesHtml += '</table>';
+        
+        notesHtml += '</tbody></table>';
+        
+        const moyenne = moyenneData.moyenne ? parseFloat(moyenneData.moyenne).toFixed(2) : 'N/A';
         
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: process.env.SMTP_USER || process.env.EMAIL_USER || 'noreply@gabconcours.ga',
             to: candidat.maican,
-            subject: 'Résultats de votre concours - GabConcours',
+            subject: `📊 Bulletin de notes - ${concours[0]?.libcnc || 'Concours'} - GABConcours`,
             html: `
-                <h2>Bonjour ${candidat.prncan} ${candidat.nomcan},</h2>
-                <p>Vos résultats sont maintenant disponibles.</p>
-                <h3>Vos notes :</h3>
-                ${notesHtml}
-                <h3>Moyenne générale : ${moyenne.moyenne ? parseFloat(moyenne.moyenne).toFixed(2) : 'N/A'}/20</h3>
-                <p>Vous pouvez consulter vos résultats détaillés sur votre tableau de bord.</p>
-                <p>Cordialement,<br>L'équipe GabConcours</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0; font-size: 28px;">🎓 GABConcours</h1>
+                        <p style="color: #e2e8f0; margin: 10px 0 0 0;">République Gabonaise - Plateforme Officielle</p>
+                    </div>
+                    
+                    <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
+                        <h2 style="color: #1e293b; margin-top: 0;">📊 Bulletin de Notes</h2>
+                        
+                        <p>Bonjour <strong>${candidat.prncan} ${candidat.nomcan}</strong>,</p>
+                        
+                        <p>Vos résultats pour le concours <strong>${concours[0]?.libcnc || ''}</strong> sont maintenant disponibles.</p>
+                        
+                        <div style="background: white; padding: 20px; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                            <h3 style="margin-top: 0; color: #2563eb;">📝 Détail des notes</h3>
+                            ${notesHtml}
+                        </div>
+                        
+                        <div style="background: #ecfdf5; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+                            <h3 style="margin: 0; color: #166534; font-size: 24px;">
+                                📊 Moyenne Générale: ${moyenne}/20
+                            </h3>
+                            <p style="margin: 10px 0 0 0; color: #166534;">
+                                Nombre de matières: ${notes.length}
+                            </p>
+                        </div>
+                        
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${candidat.nupcan}" 
+                               style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                📱 Consulter mon bulletin complet
+                            </a>
+                        </div>
+                        
+                        <p style="margin-top: 30px;">
+                            Cordialement,<br>
+                            <strong>L'équipe GABConcours</strong><br>
+                            <em>République Gabonaise</em>
+                        </p>
+                    </div>
+                    
+                    <div style="background: #1e293b; padding: 20px; text-align: center; border-radius: 0 0 10px 10px;">
+                        <p style="color: #94a3b8; margin: 0; font-size: 12px;">
+                            GABConcours - Plateforme Officielle des Concours du Gabon<br>
+                            Ne répondez pas à cet email automatique
+                        </p>
+                    </div>
+                </div>
             `
         };
         
         await transporter.sendMail(mailOptions);
         
         // Créer une notification
-        const connection = getConnection();
         await connection.execute(
             `INSERT INTO notifications (user_type, user_id, type, titre, message, created_at)
-             VALUES ('candidat', ?, 'resultat', 'Résultats disponibles', 'Vos résultats sont maintenant disponibles', NOW())`,
+             VALUES ('candidat', ?, 'resultat', 'Bulletin de notes disponible', 'Votre bulletin de notes est maintenant disponible', NOW())`,
             [candidat.nupcan]
         );
         
         res.json({
             success: true,
-            message: 'Résultats envoyés par email avec succès'
+            message: 'Bulletin de notes envoyé par email avec succès'
         });
     } catch (error) {
         console.error('Erreur envoi résultats:', error);
