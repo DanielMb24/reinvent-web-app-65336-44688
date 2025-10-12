@@ -225,49 +225,32 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                                 const note = notes.find(n => n.matiere_id === matiere.id);
                                 
                                 return (
-                                    <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
-
-
-                                        <div key={matiere.id} className="flex items-end gap-4 p-4 border rounded-lg ">
-                                            <div className="flex-1">
-                                                <Label htmlFor={`note-${matiere.id}`}>
-                                                    {matiere.nom_matiere}
-                                                    <Badge variant="secondary" className="ml-2">
-                                                        Coef. {matiere.coefficient}
-                                                    </Badge>
-                                                </Label>
-                                                <Input
-                                                    id={`note-${matiere.id}`}
-                                                    type="number"
-                                                    min="0"
-                                                    max="20"
-                                                    step="0.5"
-                                                    value={note?.note ?? ''}
-                                                    onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
-                                                    placeholder="Note sur 20"
-                                                    className="mt-2"
-                                                /> <Input
-                                                    id={`note-${matiere.id}`}
-                                                    type="number"
-                                                    min="0"
-
-
-                                                    value={note?.note ?? ''}
-                                                    onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
-                                                    placeholder="Note sur 20"
-                                                    className="mt-2"
-                                                />
-
-                                            </div>
-                                            <Button
-                                                onClick={() => saveNote(matiere.id)}
-                                                disabled={saving || !note || note.note === undefined}
-                                            >
-                                                {saving ? 'Enregistrement...' : 'Enregistrer'}
-                                            </Button>
+                                    <div key={matiere.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                                        <div className="flex-1">
+                                            <Label htmlFor={`note-${matiere.id}`}>
+                                                {matiere.nom_matiere}
+                                                <Badge variant="secondary" className="ml-2">
+                                                    Coef. {matiere.coefficient}
+                                                </Badge>
+                                            </Label>
+                                            <Input
+                                                id={`note-${matiere.id}`}
+                                                type="number"
+                                                min="0"
+                                                max="20"
+                                                step="0.5"
+                                                value={note?.note ?? ''}
+                                                onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
+                                                placeholder="Note sur 20"
+                                                className="mt-2"
+                                            />
                                         </div>
-
-
+                                        <Button
+                                            onClick={() => saveNote(matiere.id)}
+                                            disabled={saving || !note || note.note === undefined}
+                                        >
+                                            {saving ? 'Enregistrement...' : 'Enregistrer'}
+                                        </Button>
                                     </div>
                                 );
                             })}
