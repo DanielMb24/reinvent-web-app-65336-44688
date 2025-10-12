@@ -56,7 +56,7 @@ router.post('/receipt', async (req, res) => {
             
             <div style="background: white; padding: 20px; border-left: 4px solid #2563eb; margin: 20px 0; border-radius: 0 8px 8px 0;">
               <h3 style="margin-top: 0; color: #2563eb;"> ${candidatData.concours.libcnc}</h3>
-              <p style="margin: 5px 0;"><strong> Établissement:</strong> ${candidatData.concours.etablissement_nomets || 'Non spécifié'}</p>
+              <p style="margin: 5px 0;"><strong> Établissement :</strong> ${candidatData.concours.etablissement_nomets || 'Non spécifié'}</p>
               <p style="margin: 5px 0;"><strong> NUPCAN:</strong> ${nupcan}</p>
               <p style="margin: 5px 0;"><strong> Frais:</strong> ${
                 !candidatData.concours.fracnc || candidatData.concours.fracnc === 0
@@ -66,7 +66,7 @@ router.post('/receipt', async (req, res) => {
             </div>
             
             <div style="background: #ecfdf5; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0; color: #166534;"><strong> Statut:</strong> Candidature enregistrée avec succès</p>
+              <p style="margin: 0; color: #166534;"><strong> Statut :</strong> Candidature enregistrée avec succès</p>
             </div>
             
             <p><strong> Documents soumis:</strong> ${candidatData.documents.length} document(s)</p>

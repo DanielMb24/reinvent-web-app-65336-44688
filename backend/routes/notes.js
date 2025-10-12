@@ -4,6 +4,7 @@ const Note = require('../models/Note');
 const Candidat = require('../models/Candidat');
 const { authenticateAdmin } = require('../middleware/auth');
 const { getConnection } = require('../config/database');
+const Notification = require("../models/Notification");
 
 // Créer ou mettre à jour une note
 router.post('/', authenticateAdmin, async (req, res) => {
@@ -329,12 +330,19 @@ router.post('/envoyer-resultats', authenticateAdmin, async (req, res) => {
         await transporter.sendMail(mailOptions);
         
         // Créer une notification
-        await connection.execute(
-            `INSERT INTO notifications (user_type, user_id, type, titre, message, created_at)
-             VALUES ('candidat', ?, 'resultat', 'Bulletin de notes disponible', 'Votre bulletin de notes est maintenant disponible', NOW())`,
-            [candidat.nupcan]
-        );
-        
+        // await connection.execute(
+        //     `INSERT INTO notifications (user_type, user_id, type, titre, message, created_at)
+        //      VALUES ('candidat', ?, 'resultat', 'Bulletin de notes disponible', 'Votre bulletin de notes est maintenant disponible', NOW())`,
+        //     [candidat.nupcan]
+        // );
+        const Notification = require('../models/Notification');
+        await Notification.create({
+            candidat_id: candidat.id,
+            type: 'resultats',
+            titre: ' confirmé',
+            message: `Vos resultats.`,
+            statut: 'non_lu'
+        });
         res.json({
             success: true,
             message: 'Bulletin de notes envoyé par email avec succès'
