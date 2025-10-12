@@ -225,20 +225,9 @@ const DocumentPage = () => {
             return;
         }
 
-        const mandatoryTypes = documentOptions.map((opt) => opt.value);
-        const coveredMandatory = mandatoryTypes.filter((type) =>
-            uploadedDocuments.some((d) => d.value === type && (d.id || d.file))
-        );
-        if (coveredMandatory.length < mandatoryTypes.length) {
-            toast({
-                title: 'Documents manquants',
-                description: 'Tous les documents obligatoires doivent être déposés',
-                variant: 'destructive',
-            });
-            return;
-        }
-
+        // ➤ On n’impose plus la validation des documents obligatoires
         const docsToProcess = uploadedDocuments.filter((d) => d.file);
+
         try {
             await Promise.all(docsToProcess.map((doc) => (doc.id ? replaceMutation.mutateAsync(doc) : uploadMutation.mutateAsync(doc))));
             navigate(`/paiement/${encodeURIComponent(nupcan)}`);
@@ -333,73 +322,73 @@ const DocumentPage = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
                     <div className="space-y-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Documents Obligatoires ({uploadedMandatoryCount}/{mandatoryDocs.length})</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {mandatoryDocs.map((opt) => {
-                                        const doc = uploadedDocuments.find((d) => d.value === opt.value) || {
-                                            value: opt.value,
-                                            label: opt.label,
-                                            required: true,
-                                            isCustom: false,
-                                        };
-                                        const isDeposited = !!doc.id || !!doc.file;
-                                        const canModify = !doc.id || doc.statut === 'rejete';
+                        {/*<Card>*/}
+                        {/*    <CardHeader>*/}
+                        {/*        <CardTitle>Documents Obligatoires ({uploadedMandatoryCount}/{mandatoryDocs.length})</CardTitle>*/}
+                        {/*    </CardHeader>*/}
+                        {/*    <CardContent>*/}
+                        {/*        <div className="space-y-4">*/}
+                        {/*            {mandatoryDocs.map((opt) => {*/}
+                        {/*                const doc = uploadedDocuments.find((d) => d.value === opt.value) || {*/}
+                        {/*                    value: opt.value,*/}
+                        {/*                    label: opt.label,*/}
+                        {/*                    required: true,*/}
+                        {/*                    isCustom: false,*/}
+                        {/*                };*/}
+                        {/*                const isDeposited = !!doc.id || !!doc.file;*/}
+                        {/*                const canModify = !doc.id || doc.statut === 'rejete';*/}
 
-                                        return (
-                                            <div key={opt.value} className="grid grid-cols-3 items-center p-3 border rounded-lg">
-                                                <div className="col-span-2 flex flex-col">
-                                                    <p className="font-medium">
-                                                        {opt.label} {opt.required && <span className="text-red-500">*</span>}
-                                                    </p>
-                                                    {doc.file && (
-                                                        <p className="text-xs text-green-600">
-                                                            <CheckCircle className="h-3 w-3 inline mr-1" /> {doc.file.name}
-                                                        </p>
-                                                    )}
-                                                    {doc.taille && (
-                                                        <p className="text-xs text-muted-foreground">Taille: {(doc.taille / 1024).toFixed(1)} KB</p>
-                                                    )}
-                                                    {getStatusBadge(doc.statut)}
-                                                </div>
-                                                <div className="col-span-1 flex justify-end space-x-2">
-                                                    {doc.id && doc.url && (
-                                                        <Button variant="outline" size="sm" onClick={() => setSelectedDocument(doc)}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                                    {isDeposited ? (
-                                                        canModify ? (
-                                                            <>
-                                                                <Button variant="outline" size="sm" onClick={() => triggerFileInput(opt.value)}>
-                                                                    <Edit className="h-4 w-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="destructive"
-                                                                    size="sm"
-                                                                    onClick={() => removeDocument(opt.value)}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </>
-                                                        ) : (
-                                                            <Badge>Non modifiable</Badge>
-                                                        )
-                                                    ) : (
-                                                        <Button onClick={() => triggerFileInput(opt.value)}>
-                                                            <Upload className="h-4 w-4 mr-2" /> Téléverser
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/*                return (*/}
+                        {/*                    <div key={opt.value} className="grid grid-cols-3 items-center p-3 border rounded-lg">*/}
+                        {/*                        <div className="col-span-2 flex flex-col">*/}
+                        {/*                            <p className="font-medium">*/}
+                        {/*                                {opt.label} {opt.required && <span className="text-red-500">*</span>}*/}
+                        {/*                            </p>*/}
+                        {/*                            {doc.file && (*/}
+                        {/*                                <p className="text-xs text-green-600">*/}
+                        {/*                                    <CheckCircle className="h-3 w-3 inline mr-1" /> {doc.file.name}*/}
+                        {/*                                </p>*/}
+                        {/*                            )}*/}
+                        {/*                            {doc.taille && (*/}
+                        {/*                                <p className="text-xs text-muted-foreground">Taille: {(doc.taille / 1024).toFixed(1)} KB</p>*/}
+                        {/*                            )}*/}
+                        {/*                            {getStatusBadge(doc.statut)}*/}
+                        {/*                        </div>*/}
+                        {/*                        <div className="col-span-1 flex justify-end space-x-2">*/}
+                        {/*                            {doc.id && doc.url && (*/}
+                        {/*                                <Button variant="outline" size="sm" onClick={() => setSelectedDocument(doc)}>*/}
+                        {/*                                    <Eye className="h-4 w-4" />*/}
+                        {/*                                </Button>*/}
+                        {/*                            )}*/}
+                        {/*                            {isDeposited ? (*/}
+                        {/*                                canModify ? (*/}
+                        {/*                                    <>*/}
+                        {/*                                        <Button variant="outline" size="sm" onClick={() => triggerFileInput(opt.value)}>*/}
+                        {/*                                            <Edit className="h-4 w-4" />*/}
+                        {/*                                        </Button>*/}
+                        {/*                                        <Button*/}
+                        {/*                                            variant="destructive"*/}
+                        {/*                                            size="sm"*/}
+                        {/*                                            onClick={() => removeDocument(opt.value)}*/}
+                        {/*                                        >*/}
+                        {/*                                            <Trash2 className="h-4 w-4" />*/}
+                        {/*                                        </Button>*/}
+                        {/*                                    </>*/}
+                        {/*                                ) : (*/}
+                        {/*                                    <Badge>Non modifiable</Badge>*/}
+                        {/*                                )*/}
+                        {/*                            ) : (*/}
+                        {/*                                <Button onClick={() => triggerFileInput(opt.value)}>*/}
+                        {/*                                    <Upload className="h-4 w-4 mr-2" /> Téléverser*/}
+                        {/*                                </Button>*/}
+                        {/*                            )}*/}
+                        {/*                        </div>*/}
+                        {/*                    </div>*/}
+                        {/*                );*/}
+                        {/*            })}*/}
+                        {/*        </div>*/}
+                        {/*    </CardContent>*/}
+                        {/*</Card>*/}
 
                         <Card>
                             <CardHeader>
@@ -489,8 +478,8 @@ const DocumentPage = () => {
                                 disabled={
                                     uploadMutation.isPending ||
                                     replaceMutation.isPending ||
-                                    deleteMutation.isPending ||
-                                    completionPercentage < 100
+                                    deleteMutation.isPending
+
                                 }
                                 size="lg"
                             >

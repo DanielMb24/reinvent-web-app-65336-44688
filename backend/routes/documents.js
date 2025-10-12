@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const Document = require('../models/Document');
 const Dossier = require('../models/Dossier');
+const {getConnection} = require("../config/database");
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -170,26 +171,13 @@ router.get('/:id/download', async (req, res) => {
 
 // PUT /api/documents/:id/replace - Remplacer un document
 router.put('/:id/replace', upload.single('document'), async (req, res) => {
+    const connection = getConnection();
+
     try {
-        const {id} = req.params;
+        const { id } = req.params;
         console.log('Remplacement document ID:', id);
 
-        const existingDocument = await Document.findById(id);
-        if (!existingDocument) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document non trouvé',
-            });
-        }
-
-        // Vérifier que le document est rejeté
-        if (existingDocument.statut !== 'rejete') {
-            return res.status(400).json({
-                success: false,
-                message: 'Seuls les documents rejetés peuvent être remplacés',
-            });
-        }
-
+        // Vérification du fichier
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -197,39 +185,27 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
             });
         }
 
-        // Mettre à jour le document avec le nouveau fichier
-        const connection = require('../config/database').getConnection();
-        
-        // Récupérer le type de document
-        const [docInfo] = await connection.execute(
-            'SELECT type_document FROM documents WHERE id = ?',
-            [id]
-        );
-        
-        if (docInfo.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document non trouvé'
-            });
-        }
-        
+        // 🔁 Remplacer le document via le modèle
+        const updatedDocument = await Document.replace(id, req.file.filename);
+
+        // 🔗 Mettre à jour le dossier associé (si existant)
         await connection.execute(
-            'UPDATE documents SET nom_fichier = ?, statut = ?, commentaire = ?, updated_at = NOW() WHERE id = ?',
-            [req.file.filename, 'en_attente', 'Document remplacé - en attente de validation', id]
+            `UPDATE dossiers 
+       SET docdsr = ?, updated_at = NOW()
+       WHERE document_id = ?`,
+            [req.file.filename, id]
         );
 
-        // Mettre à jour le dossier associé  
-        await connection.execute(
-            'UPDATE dossiers SET docdsr = ?, typdsr = ?, updated_at = NOW() WHERE candidat_nupcan = (SELECT candidat_nupcan FROM documents WHERE id = ?) AND typdsr = ?',
-            [req.file.filename, docInfo[0].type_document, id, docInfo[0].type_document]
-        );
-
-        const updatedDocument = await Document.findById(id);
-
-        // Envoyer une notification par email
+        // 📧 Envoi de mail au candidat
         try {
-            const Candidat = require('../models/Candidat');
-            const candidat = await Candidat.findById(existingDocument.candidat_id);
+            const [rows] = await connection.execute(
+                `SELECT c.* FROM candidats c
+         JOIN dossiers d ON c.id = d.candidat_id
+         WHERE d.document_id = ? LIMIT 1`,
+                [id]
+            );
+
+            const candidat = rows[0];
             if (candidat && candidat.maican) {
                 const emailService = require('../services/emailService');
                 await emailService.sendDocumentValidation(
@@ -240,13 +216,13 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
                 );
             }
         } catch (emailError) {
-            console.error('Erreur envoi email:', emailError);
+            console.error('Erreur envoi email:', emailError.message);
         }
 
-        res.json({
+        res.status(200).json({
             success: true,
-            data: updatedDocument,
             message: 'Document remplacé avec succès',
+            data: updatedDocument,
         });
     } catch (error) {
         console.error('Erreur remplacement document:', error);
@@ -255,9 +231,10 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
             message: 'Erreur serveur',
             errors: [error.message],
         });
+    } finally {
+        connection.end();
     }
 });
-
 // DELETE /api/documents/:id - Supprimer un document
 router.delete('/:id', async (req, res) => {
     try {

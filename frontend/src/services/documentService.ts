@@ -69,18 +69,22 @@ export const documentService = {
             const response = await api.put(`/documents/${id}/replace`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
+
             const doc = response.data.data;
+
             return {
                 id: doc.id.toString(),
                 nomdoc: doc.nomdoc,
                 type: doc.type,
                 document_statut: doc.statut || 'en_attente',
-                url: doc.docdsr || doc.nom_fichier,
-                taille: doc.taille,
+                url: doc.nom_fichier,
+                taille: doc.taille || 0,
             };
-        } catch (error) {
-            console.error('Error replacing document:', error);
-            throw new Error('Failed to replace document');
+        } catch (error: any) {
+            console.error('Erreur lors du remplacement du document :', error);
+            throw new Error(
+                error.response?.data?.message || 'Échec du remplacement du document'
+            );
         }
     },
 

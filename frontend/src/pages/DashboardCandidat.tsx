@@ -206,6 +206,9 @@ const DashboardCandidat = () => {
             navigate(`/paiement/${nupcan}`);
         }
     };
+    const handlePostuler = (nupcan: string) => {
+        navigate(`/documentPage/${nupcan}`);
+    };
 
     const handleDeleteDocument = async (doc: any) => {
         if (!doc || !doc.id) {
@@ -683,6 +686,7 @@ const DashboardCandidat = () => {
                             <CardTitle className="flex items-center">
                                 <FileCheck className="h-5 w-5 mr-2" />
                                 Mes Documents ({documents?.length || 0})
+
                             </CardTitle>
                             <DocumentUploadForm onDocumentsAdd={handleDocumentAdd} existingDocuments={documents} />
                         </div>
@@ -704,6 +708,12 @@ const DashboardCandidat = () => {
                                                 <p className="text-sm text-muted-foreground mb-2">Type: {doc.type || 'Inconnu'}</p>
                                                 <p className="text-sm text-muted-foreground mb-4">
                                                     {doc.taille && `Taille: ${(doc.taille / 1024).toFixed(1)} KB`}
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handlePostuler(nupcan)}
+
+                                                    >ffffffff   </Button>
                                                 </p>
                                                 <div className="flex space-x-2">
                                                     <Button variant="outline" size="sm" onClick={() => setSelectedDocument(doc)}>
@@ -755,6 +765,7 @@ const DashboardCandidat = () => {
                         className="hidden"
                         onChange={handleFileChange}
                     />
+
                 </Card>
 
                 {/* Viewer pour prévisualiser un document */}
@@ -768,7 +779,7 @@ const DashboardCandidat = () => {
                 <div className="mb-8">
                     <MessagerieCandidat nupcan={nupcan!} />
                 </div>
-                
+
                 {/* Onglet Notes */}
                 <div className={activeTab === 'notes' ? 'block' : 'hidden'}>
                     <GradesView nupcan={nupcan!} />
