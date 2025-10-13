@@ -197,27 +197,27 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
         );
 
         // 📧 Envoi de mail au candidat
-        try {
-            const [rows] = await connection.execute(
-                `SELECT c.* FROM candidats c
-         JOIN dossiers d ON c.id = d.candidat_id
-         WHERE d.document_id = ? LIMIT 1`,
-                [id]
-            );
-
-            const candidat = rows[0];
-            if (candidat && candidat.maican) {
-                const emailService = require('../services/emailService');
-                await emailService.sendDocumentValidation(
-                    candidat,
-                    updatedDocument,
-                    'en_attente',
-                    'Document remplacé - en attente de validation'
-                );
-            }
-        } catch (emailError) {
-            console.error('Erreur envoi email:', emailError.message);
-        }
+        // try {
+        //     const [rows] = await connection.execute(
+        //         `SELECT c.* FROM candidats c
+        //  JOIN dossiers d ON c.id = d.candidat_id
+        //  WHERE d.document_id = ? LIMIT 1`,
+        //         [id]
+        //     );
+        //
+        //     const candidat = rows[0];
+        //     if (candidat && candidat.maican) {
+        //         const emailService = require('../services/emailService');
+        //         await emailService.sendDocumentValidation(
+        //             candidat,
+        //             updatedDocument,
+        //             'en_attente',
+        //             'Document remplacé - en attente de validation'
+        //         );
+        //     }
+        // } catch (emailError) {
+        //     console.error('Erreur envoi email:', emailError.message);
+        // }
 
         res.status(200).json({
             success: true,
