@@ -59,6 +59,18 @@ class Paiement {
         }
     }
 
+
+
+    static async updateByReference(reference, data) {
+        const connection = getConnection();
+        const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
+        const values = [...Object.values(data), reference];
+        await connection.execute(
+            `UPDATE paiements SET ${fields}, updated_at = NOW() WHERE reference_paiement = ?`,
+            values
+        );
+    }
+
     static async findById(id) {
         const connection = getConnection();
         const [rows] = await connection.execute(

@@ -24,6 +24,10 @@ import {useCandidatureState} from '@/hooks/useCandidatureState';
 import {apiService} from '@/services/api';
 import {validatePhoneNumber, formatPhoneDisplay} from '@/utils/phoneValidation';
 
+interface PaiementCinetPayResponse {
+    paiement: any; // Remplace par le type exact si tu veux
+    payment_url: string;
+}
 const Paiement = () => {
     const {numeroCandidature} = useParams<{ numeroCandidature: string }>();
     const navigate = useNavigate();
@@ -67,6 +71,8 @@ const Paiement = () => {
         setPhoneError('');
     };
 
+
+
     const handlePayment = async () => {
         if (!candidatureState?.candidatData || !candidatureState?.concoursData) {
             toast({
@@ -79,12 +85,12 @@ const Paiement = () => {
 
         const montant = parseFloat(candidatureState.concoursData.fracnc);
 
+        // Cas concours gratuit
         if (montant === 0) {
             toast({
                 title: "Concours gratuit",
                 description: "Ce concours est entièrement gratuit !",
             });
-
             await updateProgression(numeroCandidature || '', 'paiement');
             navigate(`/succes/${encodeURIComponent(numeroCandidature || '')}`);
             return;
@@ -104,6 +110,7 @@ const Paiement = () => {
             return;
         }
 
+        // Validation du numéro
         if (selectedMethod === 'moov' || selectedMethod === 'airtel_money') {
             const validation = validatePhoneNumber(phoneNumber, selectedMethod as 'moov' | 'airtel_money');
             if (!validation.isValid) {
@@ -117,28 +124,31 @@ const Paiement = () => {
         try {
             const candidat = candidatureState.candidatData;
 
-            // Utiliser le NUPCAN au lieu du NIP pour le paiement
             const paiementData = {
-                nupcan: candidat.nupcan || numeroCandidature, // Fallback sur numeroCandidature
+                nupcan: candidat.nupcan || numeroCandidature,
                 montant: montant,
                 methode: selectedMethod,
-                statut: 'valide',
-                numero_telephone: phoneNumber, // Corrigé: numero_telephone au lieu de telephone
+                statut: 'en_attente', // Toujours en attente pour le push vers paiement
+                numero_telephone: phoneNumber,
                 reference_paiement: `PAY-${Date.now()}`
             };
 
             console.log('Données paiement:', paiementData);
 
-            // Validation côté client avant envoi
-            if (!paiementData.nupcan) {
-                throw new Error('NUPCAN manquant pour le paiement');
+            if (selectedMethod === 'cinetpay') {
+                const response = await apiService.createPaiement<PaiementCinetPayResponse>(paiementData);
+
+                if (!response.success || !response.data?.payment_url) {
+                    throw new Error(response.message || 'Erreur lors du paiement CinetPay');
+                }
+
+                // Redirection vers CinetPay
+                window.location.href = response.data.payment_url;
+                return;
             }
 
-            if (!paiementData.montant || paiementData.montant <= 0) {
-                throw new Error('Montant invalide pour le paiement');
-            }
-
-            const response = await apiService.createPaiement(paiementData);
+            // Moov et Airtel
+            const response = await apiService.createPaiement<any>(paiementData);
 
             if (!response.success) {
                 throw new Error(response.message || 'Erreur lors du paiement');
@@ -146,7 +156,7 @@ const Paiement = () => {
 
             toast({
                 title: "Paiement validé",
-                description: "Votre paiement a été traité avec succès. Un email de confirmation vous a été envoyé."
+                description: "Votre paiement a été traité avec succès."
             });
 
             await updateProgression(numeroCandidature || '', 'paiement');

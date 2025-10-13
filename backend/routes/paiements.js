@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Paiement = require('../models/Paiement');
 const Candidat = require('../models/Candidat');
+const cinetpayService = require('../services/cinetpayService');
 
 // GET /api/paiements/nupcan/:nupcan - Récupérer paiement par NUPCAN
 router.get('/nupcan/:nupcan', async (req, res) => {
@@ -33,6 +34,32 @@ router.post('/', async (req, res) => {
     try {
         const paiementData = req.body;
         console.log('Création paiement - Données reçues:', paiementData);
+// === AJOUT ===
+        if (paiementData.methode === 'cinetpay') {
+            const cinetResponse = await cinetpayService.initPayment(paiementData);
+
+            if (!cinetResponse.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: cinetResponse.message
+                });
+            }
+
+            // Enregistre le paiement avec statut "en_attente"
+            paiementData.statut = 'en_attente';
+            paiementData.reference_paiement = paiementData.reference_paiement || Date.now().toString();
+
+            const paiement = await Paiement.create(paiementData);
+
+            return res.status(201).json({
+                success: true,
+                data: {
+                    paiement,
+                    payment_url: cinetResponse.payment_url
+                },
+                message: 'Paiement en attente. Redirection vers CinetPay.'
+            });
+        }
 
         // Validation des données obligatoires
         if (!paiementData.nupcan && !paiementData.nipcan) {
@@ -124,6 +151,32 @@ router.post('/', async (req, res) => {
         });
     }
 });
+
+
+
+router.post('/cinetpay/callback', async (req, res) => {
+    try {
+        const { transaction_id } = req.body;
+        console.log('Callback reçu de CinetPay:', transaction_id);
+
+        const cinetpayService = require('../services/cinetpayService');
+        const verification = await cinetpayService.verifyPayment(transaction_id);
+
+        if (verification.data.status === "ACCEPTED") {
+            await Paiement.updateByReference(transaction_id, { statut: 'valide' });
+            console.log('Paiement validé:', transaction_id);
+            res.status(200).send('OK');
+        } else {
+            console.log('Paiement non accepté:', verification.data.status);
+            res.status(200).send('En attente');
+        }
+    } catch (error) {
+        console.error('Erreur callback CinetPay:', error);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
+
 
 // GET /api/paiements - Récupérer tous les paiements
 router.get('/', async (req, res) => {
