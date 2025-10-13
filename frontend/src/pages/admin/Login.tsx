@@ -7,6 +7,7 @@ import {Label} from '@/components/ui/label';
 import {LogIn, Shield, AlertCircle} from 'lucide-react';
 import {useAdminAuth} from '@/contexts/AdminAuthContext';
 import {toast} from '@/hooks/use-toast';
+import adminLoginImage from '@/assets/admin-login.png';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
@@ -48,7 +49,15 @@ const AdminLogin = () => {
 
     return (
         <div className="min-h-screen bg-background flex items-center justify-center px-4">
-            <div className="max-w-md w-full">
+            <div className="max-w-4xl w-full grid md:grid-cols-2 gap-8 items-center">
+                <div className="hidden md:block">
+                    <img 
+                        src={adminLoginImage} 
+                        alt="Administration" 
+                        className="w-full h-auto rounded-lg"
+                    />
+                </div>
+                <div className="w-full">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-6">
                         <Shield className="h-8 w-8 text-primary"/>
@@ -120,6 +129,7 @@ const AdminLogin = () => {
                         {/*</div>*/}
                     </CardContent>
                 </Card>
+                </div>
             </div>
         </div>
     );

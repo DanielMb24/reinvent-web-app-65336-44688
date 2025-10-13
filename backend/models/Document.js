@@ -58,7 +58,11 @@ class Document {
         const connection = getConnection();
         const doc = await this.findById(id);
         if (!doc) throw new Error('Document non trouvé');
-        if (doc.statut !== 'rejete') throw new Error('Seuls les documents rejetés peuvent être remplacés');
+        
+        // Permettre le remplacement pour les documents rejetés ou en attente
+        if (doc.statut !== 'rejete' && doc.statut !== 'en_attente') {
+            throw new Error('Seuls les documents rejetés ou en attente peuvent être remplacés');
+        }
 
         await connection.execute(
             `UPDATE documents
