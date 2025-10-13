@@ -169,7 +169,7 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <TableCell>{getStatusBadge(document.statut)}</TableCell>
+                                        {getStatusBadge(document.statut)}
                                     </TableCell>
                                     <TableCell>
                                         <Button

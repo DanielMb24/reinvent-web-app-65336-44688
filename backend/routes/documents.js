@@ -237,6 +237,8 @@ router.put('/:id/replace', upload.single('document'), async (req, res) => {
 });
 // DELETE /api/documents/:id - Supprimer un document
 router.delete('/:id', async (req, res) => {
+    const connection = getConnection();
+    
     try {
         const {id} = req.params;
         
@@ -255,6 +257,9 @@ router.delete('/:id', async (req, res) => {
                 message: 'Impossible de supprimer un document validé'
             });
         }
+        
+        // Supprimer aussi de la table dossiers
+        await connection.execute('DELETE FROM dossiers WHERE document_id = ?', [id]);
         
         const deleted = await Document.deleteById(id);
         
