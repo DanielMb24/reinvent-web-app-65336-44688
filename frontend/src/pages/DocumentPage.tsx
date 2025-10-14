@@ -395,12 +395,12 @@ const DocumentPage = () => {
                                 <CardTitle>Documents Personnalisés (Optionnel)</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {customDocs.map((doc) => {
+                                {customDocs.map((doc, index) => {
                                     const canModify = !doc.id || doc.statut === 'rejete';
                                     const canEditLabel = !doc.id;
 
                                     return (
-                                        <div key={doc.value} className="grid grid-cols-4 gap-3 items-center p-3 border rounded-lg">
+                                        <div key={`custom-doc-${doc.id || doc.value}-${index}`} className="grid grid-cols-4 gap-3 items-center p-3 border rounded-lg">
                                             <div className="col-span-2">
                                                 <Input
                                                     placeholder="Nom du document"

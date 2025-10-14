@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { apiService } from '@/services/api';
-import { BookOpen, TrendingUp } from 'lucide-react';
+import { BookOpen, TrendingUp, Download, FileText } from 'lucide-react';
+import GradesBulletinPDF from '@/components/candidat/GradesBulletinPDF';
 
 interface Grade {
   matiere: string;
@@ -22,6 +24,7 @@ interface GradesData {
 const GradesView: React.FC<{ nupcan: string }> = ({ nupcan }) => {
   const [gradesData, setGradesData] = useState<GradesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showBulletin, setShowBulletin] = useState(false);
 
   useEffect(() => {
     loadGrades();
@@ -68,6 +71,21 @@ const GradesView: React.FC<{ nupcan: string }> = ({ nupcan }) => {
     );
   }
 
+  if (showBulletin && gradesData) {
+    return (
+      <div className="space-y-4">
+        <Button onClick={() => setShowBulletin(false)} variant="outline">
+          ← Retour aux notes
+        </Button>
+        <GradesBulletinPDF
+          candidat={gradesData.candidat}
+          notes={gradesData.notes}
+          moyenneGenerale={parseFloat(gradesData.moyenneGenerale as any)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Moyenne Générale */}
@@ -97,8 +115,16 @@ const GradesView: React.FC<{ nupcan: string }> = ({ nupcan }) => {
       {/* Détail des Notes */}
       <Card>
         <CardHeader>
-          <CardTitle>Détail des Notes par Matière</CardTitle>
-          <CardDescription>Vos résultats par matière avec coefficients</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Détail des Notes par Matière</CardTitle>
+              <CardDescription>Vos résultats par matière avec coefficients</CardDescription>
+            </div>
+            <Button onClick={() => setShowBulletin(true)} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Bulletin PDF
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

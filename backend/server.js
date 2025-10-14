@@ -82,7 +82,6 @@ const documentsExtendedRoutes = require('./routes/documents-extended');
 const notesRoutes = require('./routes/notes');
 const userRolesRoutes = require('./routes/user-roles');
 
-
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
@@ -98,6 +97,20 @@ app.use('/api/statistics', statisticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/etudiants', etudiantsRoutes);
+app.use('/api/documents', documentsRoutes);
+app.use('/api/paiements', paiementsRoutes);
+app.use('/api/documentvalidation', documentValidationRoutes);
+app.use('/api/admin-documents', adminDocumentsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/exports', exportRoutes);
+app.use('/api/admin-management', adminManagementRoutes);
+app.use('/api/documents-extended', documentsExtendedRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/grades', notesRoutes); // Alias for grades
+app.use('/api/user-roles', userRolesRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/paiements', paiementsRoutes);
 app.use('/api/document-validation', documentValidationRoutes);

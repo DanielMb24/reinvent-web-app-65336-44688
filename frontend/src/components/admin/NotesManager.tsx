@@ -50,10 +50,27 @@ const NotesManager: React.FC<NotesManagerProps> = ({
         try {
             setLoading(true);
             
-            // Récupérer les matières
-            const matieresResponse = await apiService.makeRequest('/matieres', 'GET');
-            if (matieresResponse.success && Array.isArray(matieresResponse.data)) {
-                setMatieres(matieresResponse.data);
+            // Récupérer le candidat pour obtenir sa filière
+            const candidatResponse = await apiService.makeRequest(`/candidats/${candidatId}`, 'GET');
+            const filiereId = candidatResponse.data?.filiere_id;
+            
+            // Récupérer les matières de la filière du candidat
+            let matieresResponse;
+            if (filiereId) {
+                matieresResponse = await apiService.makeRequest(`/filieres/${filiereId}`, 'GET');
+                if (matieresResponse.success && matieresResponse.data?.matieres) {
+                    setMatieres(matieresResponse.data.matieres);
+                } else {
+                    setMatieres([]);
+                }
+            } else {
+                // Si pas de filière, récupérer toutes les matières
+                matieresResponse = await apiService.makeRequest('/matieres', 'GET');
+                if (matieresResponse.success && Array.isArray(matieresResponse.data)) {
+                    setMatieres(matieresResponse.data);
+                } else {
+                    setMatieres([]);
+                }
             }
             
             // Récupérer les notes existantes
