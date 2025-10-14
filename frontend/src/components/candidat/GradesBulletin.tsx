@@ -35,7 +35,7 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
     const fetchNotes = async () => {
         try {
             setLoading(true);
-            const response = await apiService.makeRequest(`/grades/candidat/${nupcan}`, 'GET');
+            const response = await apiService.makeRequest(`/grades/concours/${concoursId}`, 'GET');
             
             if (response.success && response.data) {
                 const data = response.data as any;

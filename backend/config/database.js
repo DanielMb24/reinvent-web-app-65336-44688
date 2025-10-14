@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const {createPool} = require("mysql2");
 require('dotenv').config();
 
 const dbConfig = {
@@ -51,6 +52,26 @@ const testConnection = async () => {
         throw error;
     }
 };
+
+
+
+
+// Gestion auto-reconnexion si pool fermé
+process.on('uncaughtException', async (err) => {
+    console.error('💥 Exception non gérée:', err);
+    if (err.message.includes('Pool is closed')) {
+        console.log('🔄 Tentative de recréation du pool...');
+        await createConnection();
+    }
+});
+
+process.on('unhandledRejection', async (err) => {
+    console.error('💥 Rejection non gérée:', err);
+    if (err.message.includes('Pool is closed')) {
+        console.log('🔄 Tentative de recréation du pool...');
+        await createConnection();
+    }
+});
 
 module.exports = {
     createConnection,

@@ -46,6 +46,8 @@ import CandidatDashboard from '@/pages/CandidatDashboard';
 import CandidatDetail from '@/pages/admin/CandidatDetail';
 import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
 import Dashboard from './pages/admin/Dashboard';
+import GradesView from "@/pages/candidate/GradesView.tsx";
+import GradesBulletinPDF from "@/components/candidat/GradesBulletinPDF.tsx";
 
 
 const queryClient = new QueryClient({
@@ -103,6 +105,11 @@ function App() {
                         <Route path="/candidat/dashboard" element={<CandidatDashboard/>}/>
                         <Route path="/recap/:nupcan" element={<RecapPaiement/>}/>
                         <Route path="/connexion" element={<Connexion/>}/>
+<Route path="/grades/:nupcan" element={<GradesBulletinPDF candidat={{
+                                nomcan: '',
+                                prncan: '',
+                                nupcan: ''
+                            }} notes={[]} moyenneGenerale={0} />}/>
 
                         {/* Routes admin */}
                         <Route path="/admin/login" element={<AdminLogin/>}/>

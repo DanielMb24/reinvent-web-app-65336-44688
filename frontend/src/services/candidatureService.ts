@@ -137,6 +137,7 @@ class CandidatureService {
             const progression = this.determineProgression(candidat, [], null);
 
             const candidatureComplete: CandidatureCompleteData = {
+
                 id: candidat.id,
                 candidat: candidat as any,
                 concours,

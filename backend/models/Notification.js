@@ -6,14 +6,14 @@ class Notification {
 
         try {
             const [result] = await connection.execute(
-                `INSERT INTO notifications (candidat_id, type, titre, message, lu, created_at)
+                `INSERT INTO notifications (candidat_id, type, titre, message, statut, created_at)
          VALUES (?, ?, ?, ?, ?, NOW())`,
                 [
                     notificationData.candidat_id,
                     notificationData.type || 'info',
                     notificationData.titre,
                     notificationData.message,
-                    notificationData.lu || false
+                    notificationData.statut || false
                 ]
             );
 

@@ -79,7 +79,7 @@ npm install
 Exécutez les scripts SQL fournis pour créer la structure de la base de données.
 
 ### 3. Démarrer le serveur
-
+-
 ```bash
 npm start
 ```

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Button } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Download, Printer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 

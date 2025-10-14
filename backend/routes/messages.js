@@ -72,45 +72,48 @@ router.get('/admin', async (req, res) => {
 });
 
 // Envoyer un message (candidat)
+// Envoyer un message (candidat)
 router.post('/candidat', async (req, res) => {
     try {
-        const { nupcan, sujet, message,admin_id } = req.body;
-        
+        const { nupcan, sujet, message, admin_id } = req.body;
+
+        // Vérification des champs obligatoires
         if (!nupcan || !sujet || !message) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'NUPCAN, sujet et message requis' 
+            return res.status(400).json({
+                success: false,
+                message: 'NUPCAN, sujet et message requis'
             });
         }
-        
+
         const connection = getConnection();
-        
+
         // Vérifier que le candidat existe
         const [candidats] = await connection.execute(
             'SELECT * FROM candidats WHERE nupcan = ?',
             [nupcan]
         );
-        
+
         if (candidats.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Candidat non trouvé' 
+            return res.status(404).json({
+                success: false,
+                message: 'Candidat non trouvé'
             });
         }
-        
+
         const candidat = candidats[0];
-        
+
+        // Insertion sécurisée (admin_id peut être null)
         const [result] = await connection.execute(
-            `INSERT INTO messages (candidat_nupcan, sujet, message, admin_id, expediteur, statut, created_at)
+            `INSERT INTO messages 
+                (candidat_nupcan, sujet, message, admin_id, expediteur, statut, created_at)
              VALUES (?, ?, ?, ?, 'candidat', 'non_lu', NOW())`,
-            [nupcan, sujet, message,admin_id]
+            [nupcan, sujet, message, admin_id ?? null]
         );
-        
-        // Envoyer notification email aux admins
+
+        // Notification email aux admins
         try {
-            const { sendEmail } = require('../services/emailService');
             await sendEmail(
-                process.env.ADMIN_EMAIL || 'admin@gabconcours.ga',
+                process.env.SMTP_USER || 'admin@gabconcours.ga',
                 `Nouveau message de ${candidat.prncan} ${candidat.nomcan}`,
                 `
                 <div style="font-family: Arial, sans-serif; max-width: 600px;">
@@ -129,9 +132,9 @@ router.post('/candidat', async (req, res) => {
         } catch (emailError) {
             console.error('Erreur envoi email admin:', emailError);
         }
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: 'Message envoyé avec succès',
             data: { id: result.insertId }
         });
@@ -145,38 +148,46 @@ router.post('/candidat', async (req, res) => {
 router.post('/admin/repondre', async (req, res) => {
     try {
         const { message_id, nupcan, sujet, message, admin_id } = req.body;
-        
-        if (!nupcan || !message || !admin_id) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'NUPCAN, message et admin_id requis' 
+
+        if (!nupcan || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'NUPCAN et message requis'
             });
         }
-        
+
+        if (!admin_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'admin_id requis'
+            });
+        }
+
         const connection = getConnection();
-        
-        // Récupérer le candidat
+
+        // Vérifier que le candidat existe
         const [candidats] = await connection.execute(
             'SELECT * FROM candidats WHERE nupcan = ?',
             [nupcan]
         );
-        
+
         if (candidats.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Candidat non trouvé' 
+            return res.status(404).json({
+                success: false,
+                message: 'Candidat non trouvé'
             });
         }
-        
+
         const candidat = candidats[0];
-        
-        // Insérer la réponse
+
+        // Insertion sécurisée de la réponse
         const [result] = await connection.execute(
-            `INSERT INTO messages (candidat_nupcan, admin_id, sujet, message, expediteur, statut, created_at)
+            `INSERT INTO messages 
+                (candidat_nupcan, admin_id, sujet, message, expediteur, statut, created_at)
              VALUES (?, ?, ?, ?, 'admin', 'non_lu', NOW())`,
-            [nupcan, admin_id, sujet || 'Réponse à votre message', message]
+            [nupcan, admin_id, sujet ?? 'Réponse à votre message', message]
         );
-        
+
         // Marquer le message original comme lu
         if (message_id) {
             await connection.execute(
@@ -184,8 +195,8 @@ router.post('/admin/repondre', async (req, res) => {
                 [message_id]
             );
         }
-        
-        // Envoyer notification email au candidat
+
+        // Envoyer email au candidat
         try {
             await sendEmail(
                 candidat.maican,
@@ -194,7 +205,7 @@ router.post('/admin/repondre', async (req, res) => {
                 <h2>Réponse de l'administration</h2>
                 <p>Bonjour ${candidat.prncan} ${candidat.nomcan},</p>
                 <p>Vous avez reçu une réponse à votre message:</p>
-                <p><strong>Sujet:</strong> ${sujet || 'Réponse à votre message'}</p>
+                <p><strong>Sujet:</strong> ${sujet ?? 'Réponse à votre message'}</p>
                 <p><strong>Message:</strong></p>
                 <p>${message}</p>
                 <p>Connectez-vous à votre espace candidat pour voir l'historique complet.</p>
@@ -203,24 +214,31 @@ router.post('/admin/repondre', async (req, res) => {
         } catch (emailError) {
             console.error('Erreur envoi email:', emailError);
         }
-        
-        // Créer une notification
+
+        // Notification interne
         await connection.execute(
-            `INSERT INTO notifications (user_type, user_id, type, titre, message, created_at)
+            `INSERT INTO notifications 
+                (user_type, user_id, type, titre, message, created_at)
              VALUES ('candidat', ?, 'message', 'Nouvelle réponse', ?, NOW())`,
-            [nupcan, `Vous avez reçu une réponse de l'administration`]
+            [nupcan, 'Vous avez reçu une réponse de l\'administration']
         );
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             message: 'Réponse envoyée avec succès',
             data: { id: result.insertId }
         });
+
     } catch (error) {
         console.error('Erreur réponse message:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+
+
+
+
 
 // Marquer un message comme lu
 router.put('/:id/marquer-lu', async (req, res) => {

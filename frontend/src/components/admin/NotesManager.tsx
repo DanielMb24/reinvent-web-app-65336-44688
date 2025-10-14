@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { BookOpen, Send, Calculator } from 'lucide-react';
 import { apiService } from '@/services/api';
+import {useQuery} from "@tanstack/react-query";
+import {candidatureService} from "@/services/candidatureService.ts";
+import {useParams} from "react-router-dom";
 
 interface NotesManagerProps {
     candidatId: number;
@@ -35,6 +38,7 @@ const NotesManager: React.FC<NotesManagerProps> = ({
     candidatPrenom,
     concoursId
 }) => {
+    const { nupcan } = useParams<{ nupcan: string }>();
     const [notes, setNotes] = useState<Note[]>([]);
     const [matieres, setMatieres] = useState<Matiere[]>([]);
     const [moyenne, setMoyenne] = useState<string | null>(null);
@@ -46,14 +50,29 @@ const NotesManager: React.FC<NotesManagerProps> = ({
         fetchData();
     }, [candidatId, concoursId]);
 
+
+
+
+    const { data: candidatureData } = useQuery({
+        queryKey: ['candidature-complete', nupcan],
+        queryFn: () => candidatureService.getCandidatureByNupcan(nupcan!),
+        enabled: !!nupcan,
+        refetchInterval: 10000,
+    });
+
+
+
     const fetchData = async () => {
         try {
+
+            if(!candidatureData)return;
+            const { filiere}= candidatureData
             setLoading(true);
-            
+
             // Récupérer le candidat pour obtenir sa filière
             const candidatResponse = await apiService.makeRequest(`/candidats/${candidatId}`, 'GET');
-            const filiereId = candidatResponse.data?.filiere_id;
-            
+            const filiereId = candidatureData.filiere?.filiere_id;
+
             // Récupérer les matières de la filière du candidat
             let matieresResponse;
             if (filiereId) {
@@ -72,13 +91,13 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                     setMatieres([]);
                 }
             }
-            
+
             // Récupérer les notes existantes
             const notesResponse = await apiService.makeRequest(
                 `/notes/candidat/${candidatId}/concours/${concoursId}`,
                 'GET'
             );
-            
+
             if (notesResponse.success && notesResponse.data) {
                 const data = notesResponse.data as any;
                 setNotes(Array.isArray(data.notes) ? data.notes : []);
@@ -98,11 +117,11 @@ const NotesManager: React.FC<NotesManagerProps> = ({
 
     const handleNoteChange = (matiere_id: number, value: string) => {
         const noteValue = parseFloat(value);
-        
+
         if (value === '' || (noteValue >= 0 && noteValue <= 20)) {
             const existingNoteIndex = notes.findIndex(n => n.matiere_id === matiere_id);
             const matiere = matieres.find(m => m.id === matiere_id);
-            
+
             if (existingNoteIndex >= 0) {
                 const newNotes = [...notes];
                 newNotes[existingNoteIndex] = {
@@ -125,12 +144,12 @@ const NotesManager: React.FC<NotesManagerProps> = ({
     const saveNote = async (matiere_id: number) => {
         try {
             setSaving(true);
-            
+
             const note = notes.find(n => n.matiere_id === matiere_id);
             if (!note || note.note === undefined) {
                 return;
             }
-            
+
             const response = await apiService.makeRequest('/notes', 'POST', {
                 candidat_id: candidatId,
                 concours_id: concoursId,
@@ -138,13 +157,13 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                 note: note.note,
                 coefficient: note.coefficient
             });
-            
+
             if (response.success) {
                 toast({
                     title: 'Succès',
                     description: 'Note enregistrée avec succès'
                 });
-                
+
                 // Rafraîchir les données
                 await fetchData();
             } else {
@@ -169,12 +188,12 @@ const NotesManager: React.FC<NotesManagerProps> = ({
     const sendResults = async () => {
         try {
             setSending(true);
-            
+
             const response = await apiService.makeRequest('/notes/envoyer-resultats', 'POST', {
                 candidat_id: candidatId,
                 concours_id: concoursId
             });
-            
+
             if (response.success) {
                 toast({
                     title: 'Succès',
@@ -198,6 +217,7 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             setSending(false);
         }
     };
+    const {  filiere } = candidatureData;
 
     if (loading) {
         return (
@@ -219,26 +239,31 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5" />
+                        <BookOpen className="h-5 w-5"/>
                         <span>Gestion des notes - {candidatPrenom} {candidatNom}</span>
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <h3 className="font-semibold text-lg text-blue-800">{filiere.nomfil || 'Non définie'}</h3>
+                            {filiere.description && <p className="text-blue-700 mt-2">{filiere.description}</p>}
+                        </div>
                     </div>
                     {moyenne && (
                         <Badge variant="outline" className="text-lg px-4 py-1">
-                            <Calculator className="h-4 w-4 mr-2" />
+                            <Calculator className="h-4 w-4 mr-2"/>
                             Moyenne: {moyenne}/20
                         </Badge>
                     )}
                 </CardTitle>
             </CardHeader>
             <CardContent>
+
                 <div className="space-y-4">
-                    {matieres.length === 0 ? (
+                    {filiere.matieres.length === 0 ? (
                         <p className="text-center text-muted-foreground py-8">
                             Aucune matière disponible
                         </p>
                     ) : (
                         <>
-                            {matieres.map((matiere) => {
+                            {filiere.matieres.map((matiere) => {
                                 const note = notes.find(n => n.matiere_id === matiere.id);
                                 
                                 return (

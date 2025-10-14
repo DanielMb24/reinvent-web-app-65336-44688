@@ -44,6 +44,8 @@ import MessagerieCandidat from '@/components/MessagerieCandidat';
 import { ProgressBar } from '@/components/ProgressBar';
 import GradesView from '@/pages/candidate/GradesView';
 import DocumentReplaceDialog from '@/components/documents/DocumentReplaceDialog';
+import GradesBulletinPDF from "@/components/candidat/GradesBulletinPDF.tsx";
+import GradesBulletin from "@/components/candidat/GradesBulletin.tsx";
 
 const DashboardCandidat = () => {
     const { nupcan } = useParams<{ nupcan: string }>();
@@ -779,6 +781,24 @@ const DashboardCandidat = () => {
                 <div className="mb-8">
                     <MessagerieCandidat nupcan={nupcan!} />
                 </div>
+
+
+                {/*<div className="mb-8">*/}
+                {/*    <GradesBulletinPDF candidat={{*/}
+                {/*        nomcan: '',*/}
+                {/*        prncan: '',*/}
+                {/*        nupcan: ''*/}
+                {/*    }} notes={[]} moyenneGenerale={0}  />*/}
+                {/*</div>*/}
+
+                <div className="mb-8">
+                    <GradesBulletin nupcan={''} candidat={{
+                        nomcan: '',
+                        prncan: ''
+                    }}   />
+                </div>
+
+
 
                 {/* Onglet Notes */}
                 <div className={activeTab === 'notes' ? 'block' : 'hidden'}>
