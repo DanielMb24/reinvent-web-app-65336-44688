@@ -22,6 +22,7 @@ export const api = axios.create({
 
 export class ApiService {
     private token: string | null = null;
+    defaults: any;
 
     constructor(private baseUrl: string = API_BASE_URL) {
     }

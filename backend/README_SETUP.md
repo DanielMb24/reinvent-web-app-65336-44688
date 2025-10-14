@@ -7,7 +7,7 @@
 Copiez le fichier `.env.example` vers `.env` :
 
 ```bash
-cp .env.example .env
+cp .env .env
 ```
 
 ### Étape 2: Configuration SMTP avec Gmail
