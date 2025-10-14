@@ -1,305 +1,147 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const fs = require('fs');
 const path = require('path');
-const Document = require('../models/Document');
-const Dossier = require('../models/Dossier');
-const {getConnection} = require("../config/database");
+const pdfParse = require('pdf-parse');
+const { getConnection } = require('../config/database');
 
-// Configure multer for file uploads
+// 📂 Dossier de stockage des fichiers
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+// ⚙️ Configuration de multer
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, '..', 'uploads', 'documents')); // Ensure this directory exists
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname); // Avoid filename conflicts
-    },
-});
-
-const upload = multer({storage: storage}); // Initialize multer with storage
-
-// GET /api/documents/nupcan/:nupcan - Récupérer les documents par NUPCAN
-router.get('/nupcan/:nupcan', async (req, res) => {
-    try {
-        const {nupcan} = req.params;
-        console.log('Recherche documents pour NUPCAN:', nupcan);
-
-        if (!nupcan || nupcan === 'null' || nupcan === 'undefined') {
-            return res.status(400).json({
-                success: false,
-                message: 'NUPCAN invalide',
-            });
-        }
-
-        const documents = await Dossier.findByNupcan(nupcan);
-
-        res.json({
-            success: true,
-            data: documents || [],
-            message: 'Documents récupérés avec succès',
-        });
-    } catch (error) {
-        console.error('Erreur lors de la récupération des documents:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message],
-        });
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
+const upload = multer({ storage });
 
-// POST /api/documents - Créer un nouveau document
-router.post('/', async (req, res) => {
+// 🧩 Fonction de scan (extraction du texte d’un PDF)
+async function scanDocument(filePath) {
     try {
-        const documentData = req.body;
-        console.log('Création document:', documentData);
+        const dataBuffer = fs.readFileSync(filePath);
+        const pdfData = await pdfParse(dataBuffer);
+        const text = pdfData.text.toLowerCase();
 
-        if (!documentData.nupcan) {
-            return res.status(400).json({
-                success: false,
-                message: 'NUPCAN requis pour créer un document',
-            });
+        // Exemple d’analyse simple :
+        if (text.includes('relevé') || text.includes('diplôme')) {
+            return { statut: 'valide', message: 'Document reconnu' };
+        } else {
+            return { statut: 'non_valide', message: 'Document non reconnu' };
         }
-
-        const document = await Document.create(documentData);
-
-        res.status(201).json({
-            success: true,
-            data: document,
-            message: 'Document créé avec succès',
-        });
-    } catch (error) {
-        console.error('Erreur lors de la création du document:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message],
-        });
+    } catch (err) {
+        console.error('Erreur scan :', err);
+        return { statut: 'erreur', message: 'Impossible de scanner le document' };
     }
-});
+}
 
-// PUT /api/documents/:id/status - Mettre à jour le statut d'un document
-router.put('/:id/status', async (req, res) => {
-    try {
-        const {id} = req.params;
-        const {status} = req.body;
-
-        if (!status) {
-            return res.status(400).json({
-                success: false,
-                message: 'Statut requis',
-            });
-        }
-
-        const document = await Document.updateStatus(id, status);
-
-        if (!document) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document non trouvé',
-            });
-        }
-
-        res.json({
-            success: true,
-            data: document,
-            message: 'Statut du document mis à jour avec succès',
-        });
-    } catch (error) {
-        console.error('Erreur mise à jour statut document:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message],
-        });
-    }
-});
-
-// GET /api/documents/:id/download - Télécharger un document
-router.get('/:id/download', async (req, res) => {
-    try {
-        const {id} = req.params;
-        console.log('Téléchargement document ID:', id);
-
-        const document = await Document.findById(id);
-
-        if (!document) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document non trouvé',
-            });
-        }
-
-        const filePath = path.join(__dirname, '..', 'uploads', 'documents', document.nom_fichier);
-        const fs = require('fs');
-
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({
-                success: false,
-                message: 'Fichier non trouvé sur le serveur',
-            });
-        }
-
-        const ext = path.extname(document.nom_fichier).toLowerCase();
-        let contentType = 'application/octet-stream';
-        switch (ext) {
-            case '.pdf':
-                contentType = 'application/pdf';
-                break;
-            case '.jpg':
-            case '.jpeg':
-                contentType = 'image/jpeg';
-                break;
-            case '.png':
-                contentType = 'image/png';
-                break;
-        }
-
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename="${document.nomdoc}"`);
-
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
-    } catch (error) {
-        console.error('Erreur téléchargement document:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur lors du téléchargement',
-        });
-    }
-});
-
-// PUT /api/documents/:id/replace - Remplacer un document
-router.put('/:id/replace', upload.single('document'), async (req, res) => {
-    const connection = getConnection();
-
-    try {
-        const { id } = req.params;
-        console.log('Remplacement document ID:', id);
-
-        // Vérification du fichier
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: 'Aucun fichier uploadé',
-            });
-        }
-
-        // 🔁 Remplacer le document via le modèle
-        const updatedDocument = await Document.replace(id, req.file.filename);
-
-        // 🔗 Mettre à jour le dossier associé (si existant)
-        await connection.execute(
-            `UPDATE dossiers 
-       SET docdsr = ?, updated_at = NOW()
-       WHERE document_id = ?`,
-            [req.file.filename, id]
-        );
-
-        // 📧 Envoi de mail au candidat
-        try {
-            const [rows] = await connection.execute(
-                `SELECT c.* FROM candidats c
-         JOIN dossiers d ON c.id = d.candidat_id
-         WHERE d.document_id = ? LIMIT 1`,
-                [id]
-            );
-
-            const candidat = rows[0];
-            if (candidat && candidat.maican) {
-                const emailService = require('../services/emailService');
-                await emailService.sendDocumentValidation(
-                    candidat,
-                    updatedDocument,
-                    'en_attente',
-                    'Document remplacé - en attente de validation'
-                );
-            }
-        } catch (emailError) {
-            console.error('Erreur envoi email:', emailError.message);
-        }
-
-        res.status(200).json({
-            success: true,
-            message: 'Document remplacé avec succès',
-            data: updatedDocument,
-        });
-    } catch (error) {
-        console.error('Erreur remplacement document:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message],
-        });
-    } finally {
-        connection.end();
-    }
-});
-// DELETE /api/documents/:id - Supprimer un document
-router.delete('/:id', async (req, res) => {
-    const connection = getConnection();
-    
-    try {
-        const {id} = req.params;
-        
-        const document = await Document.findById(id);
-        if (!document) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document non trouvé'
-            });
-        }
-        
-        // Vérifier que le document n'est pas validé
-        if (document.statut === 'valide') {
-            return res.status(400).json({
-                success: false,
-                message: 'Impossible de supprimer un document validé'
-            });
-        }
-        
-        // Supprimer aussi de la table dossiers
-        await connection.execute('DELETE FROM dossiers WHERE document_id = ?', [id]);
-        
-        const deleted = await Document.deleteById(id);
-        
-        if (!deleted) {
-            return res.status(400).json({
-                success: false,
-                message: 'Impossible de supprimer ce document'
-            });
-        }
-        
-        res.json({
-            success: true,
-            message: 'Document supprimé avec succès'
-        });
-    } catch (error) {
-        console.error('Erreur suppression document:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message]
-        });
-    }
-});
-
-// GET /api/documents - Récupérer tous les documents
+// 🔹 1. Récupérer tous les documents
 router.get('/', async (req, res) => {
     try {
-        const documents = await Document.findAll();
+        const conn = await getConnection();
+        const [rows] = await conn.query('SELECT * FROM documents');
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+});
+
+// 🔹 2. Récupérer un document par ID
+router.get('/:id', async (req, res) => {
+    try {
+        const conn = await getConnection();
+        const [rows] = await conn.query('SELECT * FROM documents WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Document introuvable' });
+        res.json({ success: true, data: rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+});
+
+// 🔹 3. Ajouter un document (avec scan automatique)
+router.post('/', upload.single('file'), async (req, res) => {
+    const { nomdoc, type, candidat_id } = req.body;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
+
+    try {
+        const scanResult = await scanDocument(file.path);
+        const conn = await getConnection();
+
+        const [result] = await conn.query(
+            'INSERT INTO documents (nomdoc, type, fichier, statut, candidat_id) VALUES (?, ?, ?, ?, ?)',
+            [nomdoc, type, file.filename, scanResult.statut, candidat_id]
+        );
+
         res.json({
             success: true,
-            data: documents || [],
-            message: 'Documents récupérés avec succès',
+            message: 'Document ajouté et scanné avec succès',
+            data: { id: result.insertId, statut: scanResult.statut, analyse: scanResult.message }
         });
-    } catch (error) {
-        console.error('Erreur lors de la récupération des documents:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erreur serveur',
-            errors: [error.message],
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Erreur lors de l’ajout du document' });
+    }
+});
+
+// 🔹 4. Modifier un document (remplacement + nouveau scan)
+router.put('/:id/replace', upload.single('file'), async (req, res) => {
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) return res.status(400).json({ success: false, message: 'Aucun fichier fourni' });
+
+    try {
+        const conn = await getConnection();
+        const [rows] = await conn.query('SELECT fichier FROM documents WHERE id = ?', [id]);
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Document introuvable' });
+
+        // Supprimer l’ancien fichier
+        const oldPath = path.join(uploadDir, rows[0].fichier);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+
+        // Scanner le nouveau fichier
+        const scanResult = await scanDocument(file.path);
+
+        // Mettre à jour la base
+        await conn.query('UPDATE documents SET fichier = ?, statut = ? WHERE id = ?', [
+            file.filename,
+            scanResult.statut,
+            id
+        ]);
+
+        res.json({
+            success: true,
+            message: 'Document remplacé et scanné avec succès',
+            data: { id, statut: scanResult.statut, analyse: scanResult.message }
         });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Erreur lors du remplacement du document' });
+    }
+});
+
+// 🔹 5. Supprimer un document
+router.delete('/:id', async (req, res) => {
+    try {
+        const conn = await getConnection();
+        const [rows] = await conn.query('SELECT fichier FROM documents WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Document introuvable' });
+
+        const filePath = path.join(uploadDir, rows[0].fichier);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+        await conn.query('DELETE FROM documents WHERE id = ?', [req.params.id]);
+
+        res.json({ success: true, message: 'Document supprimé avec succès' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Erreur lors de la suppression du document' });
     }
 });
 

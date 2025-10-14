@@ -114,7 +114,7 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             setLoading(false);
         }
     };
-
+    const {  filiere } = candidatureData;
     const handleNoteChange = (matiere_id: number, value: string) => {
         const noteValue = parseFloat(value);
 
@@ -217,7 +217,7 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             setSending(false);
         }
     };
-    const {  filiere } = candidatureData;
+
 
     if (loading) {
         return (
