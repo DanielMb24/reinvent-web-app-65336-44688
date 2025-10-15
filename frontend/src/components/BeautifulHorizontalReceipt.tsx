@@ -2,6 +2,9 @@ import React from 'react';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
 import {
     Download,
     Mail,
@@ -77,21 +80,50 @@ const BeautifulHorizontalReceipt: React.FC<BeautifulHorizontalReceiptProps> = ({
         }
     };
 
-    const handleDownloadReceipt = () => {
+    const handleDownloadReceipt = async () => {
         try {
             const element = document.getElementById('receipt-content');
-            if (!element) return;
+            if (!element) {
+                toast({
+                    title: "Erreur",
+                    description: "Contenu du reçu introuvable.",
+                    variant: "destructive",
+                });
+                return;
+            }
 
-            // Simulation du téléchargement pour l'instant
+            // Capture du rendu
+            const canvas = await html2canvas(element, {
+                scale: 2, // meilleure qualité
+                useCORS: true, // pour les images externes
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height],
+            });
+
+            // Ajout de l'image au PDF
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+            // Nom du fichier = NUPCAN + date
+            const fileName = `Recu_Candidature_${nupcan || candidat?.nupcan || 'candidat'}.pdf`;
+
+            pdf.save(fileName);
+
             toast({
-                title: "Téléchargement simulé",
-                description: "Le reçu sera téléchargé prochainement"
+                title: "Téléchargement réussi",
+                description: "Votre reçu a été téléchargé avec succès.",
             });
         } catch (error) {
+            console.error(error);
             toast({
                 title: "Erreur",
-                description: "Impossible de télécharger le reçu",
-                variant: "destructive"
+                description: "Impossible de générer le reçu en PDF.",
+                variant: "destructive",
             });
         }
     };

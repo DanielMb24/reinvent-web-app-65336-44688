@@ -21,6 +21,15 @@ export const api = axios.create({
 });
 
 export class ApiService {
+    delete(arg0: string, arg1: { data: { deleted_by: number; }; }): any {
+        throw new Error('Method not implemented.');
+    }
+    get(arg0: string) {
+        throw new Error('Method not implemented.');
+    }
+    post(arg0: string, arg1: { etablissement_id: number; created_by: number; nom: string; prenom: string; email: string; password: string; role_type: "notes" | "documents"; }): any {
+        throw new Error('Method not implemented.');
+    }
     private token: string | null = null;
     defaults: any;
 

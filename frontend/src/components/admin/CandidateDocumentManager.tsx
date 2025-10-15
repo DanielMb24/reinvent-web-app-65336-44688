@@ -170,6 +170,7 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
                                     </TableCell>
                                     <TableCell>
                                         {getStatusBadge(document.statut)}
+
                                     </TableCell>
                                     <TableCell>
                                         <Button

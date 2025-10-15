@@ -38,8 +38,8 @@ const SubAdminsManager: React.FC = () => {
   const { data: subAdminsData, isLoading } = useQuery({
     queryKey: ['sub-admins', admin?.etablissement_id],
     queryFn: async () => {
-      const response = await apiService.get(`/sub-admins/etablissement/${admin?.etablissement_id}`);
-      return response.data;
+      const response = apiService.get(`/sub-admins/etablissement/${admin?.etablissement_id}`);
+      return response?.data;
     },
     enabled: !!admin?.etablissement_id
   });
