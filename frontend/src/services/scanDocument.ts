@@ -1,5 +1,7 @@
 // services/scanDocument.ts
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+
+const API_BASE_URL = 'http://localhost:3001/api';
 
 export interface ScanResult {
     nom?: string;
@@ -16,79 +18,71 @@ export interface ScanResponse {
     data?: ScanResult;
     error?: string;
     rawText?: string;
+    confidence?: number;
 }
 
-// Configuration axios avec baseURL par défaut
-const getBaseURL = (): string => {
-    // 1. Essayer de récupérer depuis les variables d'environnement
-    if (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL) {
-        return process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL || '';
-    }
+// services/scanDocument.ts
 
-    // 2. Détection automatique de l'environnement
-    if (typeof window !== 'undefined') {
-        // Client-side : utiliser l'URL actuelle comme base
-        return window.location.origin + '/api';
-    }
 
-    // Server-side : utiliser une base par défaut
-    return process.env.NODE_ENV === 'production'
-        ? 'https://votre-api.com/api'
-        : 'http://localhost:3000/api';
-};
 
-const scanApi = axios.create({
-    baseURL: getBaseURL(),
-    timeout: 60000, // Timeout global pour OCR
+
+export const scanApi = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
-// Intercepteur pour ajouter les headers d'auth
+// Intercepteur request
 scanApi.interceptors.request.use((config) => {
-    // Récupérer le token depuis localStorage ou sessionStorage
+    console.log('📤 Requête scan:', config.method?.toUpperCase(), config.url);
+
+    // Token d'auth
     const token = localStorage.getItem('token') ||
         sessionStorage.getItem('token') ||
-        localStorage.getItem('authToken') ||
-        sessionStorage.getItem('authToken');
-
-    // Ou depuis les cookies si vous les utilisez
-    if (!token && document.cookie) {
-        const cookies = document.cookie.split(';');
-        const authCookie = cookies.find(cookie => cookie.trim().startsWith('token=') ||
-            cookie.trim().startsWith('auth='));
-        if (authCookie) {
-            token = authCookie.split('=')[1];
-        }
-    }
+        localStorage.getItem('authToken');
 
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        // Ou selon votre format : config.headers.Authorization = token;
     }
 
-    // Ne pas forcer multipart/form-data, axios le gère automatiquement pour FormData
-    delete config.headers['Content-Type'];
+    // IMPORTANT: Ne pas forcer Content-Type pour FormData
+    if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+    }
 
     return config;
+}, (error) => {
+    console.error('❌ Erreur requête scan:', error);
+    return Promise.reject(error);
 });
 
-// Intercepteur pour les erreurs
+// Intercepteur response
 scanApi.interceptors.response.use(
-    (response) => response,
+    (response: AxiosResponse) => {
+        console.log('📥 Réponse scan:', response.status, response.data);
+        return response;
+    },
     (error: AxiosError) => {
-        console.error('Erreur scan API:', error);
+        console.error('💥 Erreur réponse scan:', {
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            message: error.message
+        });
 
-        // Gestion des erreurs de timeout
+        // Gestion spécifique des erreurs
         if (error.code === 'ECONNABORTED') {
-            throw new Error('Timeout : Le scan prend trop de temps. Essayez avec un document plus clair.');
+            const errorMsg = 'Timeout: Le scan prend trop de temps. Essayez avec un document plus clair.';
+            return Promise.reject(new Error(errorMsg));
         }
 
-        // Gestion des erreurs 4xx/5xx
         if (error.response?.status === 413) {
-            throw new Error('Fichier trop volumineux. Maximum 10MB autorisé.');
+            return Promise.reject(new Error('Fichier trop volumineux. Maximum 10MB autorisé.'));
         }
 
         if (error.response?.status === 415) {
-            throw new Error('Format de fichier non supporté. Utilisez PDF, JPG ou PNG.');
+            return Promise.reject(new Error('Format non supporté. Utilisez PDF, JPG ou PNG.'));
         }
 
         return Promise.reject(error);
@@ -96,36 +90,49 @@ scanApi.interceptors.response.use(
 );
 
 export const scanDocumentAdministratif = async (file: File): Promise<ScanResponse> => {
-    // Validation du fichier
+    console.log('🔍 === DÉBUT SCAN ===');
+    console.log('📄 Fichier:', {
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        type: file.type,
+        lastModified: new Date(file.lastModified).toLocaleString()
+    });
+
+    // Validation client
     if (!file) {
         throw new Error('Aucun fichier sélectionné');
     }
 
     if (file.size > 10 * 1024 * 1024) {
-        throw new Error('Le fichier est trop volumineux. Maximum 10MB autorisé.');
+        throw new Error('Fichier trop volumineux. Maximum 10MB autorisé.');
     }
 
-    if (!file.type.match(/^(application\/pdf|image\/(jpeg|jpg|png))/)) {
-        throw new Error('Format non supporté. Utilisez PDF, JPG ou PNG.');
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+        throw new Error(`Format non supporté: ${file.type}. Utilisez PDF, JPG ou PNG.`);
     }
 
     const formData = new FormData();
-    formData.append('document', file, file.name);
+    formData.append('document', file, file.name); // Nom du champ = "document"
+
+    // Debug FormData
+    console.log('📋 Contenu FormData:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+    }
 
     try {
-        console.log(`Scan en cours pour: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-
-        const response = await scanApi.post<{
-            success: boolean;
-            data?: ScanResult;
-            error?: string;
-            rawText?: string;
-            confidence?: number;
-            fullTextLength?: number;
-        }>('/candidatures/scan-document', formData);
+        const response = await scanApi.post<ScanResponse>('/candidatures/scan-document', formData, {
+            onUploadProgress: (progressEvent) => {
+                if (progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    console.log(`📤 Upload: ${percentCompleted}%`);
+                }
+            }
+        });
 
         if (response.data.success && response.data.data) {
-            console.log('Scan réussi:', {
+            console.log('✅ SCAN RÉUSSI:', {
                 nom: response.data.data.nom,
                 prenoms: response.data.data.prenoms,
                 dateNaissance: response.data.data.dateNaissance,
@@ -146,7 +153,7 @@ export const scanDocumentAdministratif = async (file: File): Promise<ScanRespons
         };
 
     } catch (error: any) {
-        console.error('Erreur scan:', error);
+        console.error('❌ ERREUR SCAN COMPLÈTE:', error);
 
         let errorMessage = 'Erreur lors du scan du document';
 
@@ -167,11 +174,11 @@ export const scanDocumentAdministratif = async (file: File): Promise<ScanRespons
     }
 };
 
-// Fonction utilitaire pour tester la connectivité
-export const testScanService = async (): Promise<boolean> => {
+// Fonction de test
+export const testScanConnectivity = async (): Promise<boolean> => {
     try {
-        const response = await scanApi.get('/candidatures/scan-document'); // ou une route de health check
-        return response.status === 200;
+        await scanApi.head('/candidatures/scan-document');
+        return true;
     } catch {
         return false;
     }
