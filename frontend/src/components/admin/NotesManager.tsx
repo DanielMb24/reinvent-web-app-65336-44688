@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { BookOpen, Send, Calculator } from 'lucide-react';
+import { BookOpen, Send, Calculator, Loader2 } from 'lucide-react';
 import { apiService } from '@/services/api';
-import {useQuery} from "@tanstack/react-query";
-import {candidatureService} from "@/services/candidatureService.ts";
-import {useParams} from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { candidatureService } from "@/services/candidatureService.ts";
+import { useParams } from "react-router-dom";
 
 interface NotesManagerProps {
     candidatId: number;
@@ -32,12 +32,20 @@ interface Matiere {
     coefficient: number;
 }
 
+interface Filiere {
+    id: number;
+    nomfil: string;
+    description?: string;
+    matieres: Matiere[];
+    filiere_id?: number;
+}
+
 const NotesManager: React.FC<NotesManagerProps> = ({
-    candidatId,
-    candidatNom,
-    candidatPrenom,
-    concoursId
-}) => {
+                                                       candidatId,
+                                                       candidatNom,
+                                                       candidatPrenom,
+                                                       concoursId
+                                                   }) => {
     const { nupcan } = useParams<{ nupcan: string }>();
     const [notes, setNotes] = useState<Note[]>([]);
     const [matieres, setMatieres] = useState<Matiere[]>([]);
@@ -46,51 +54,53 @@ const NotesManager: React.FC<NotesManagerProps> = ({
     const [saving, setSaving] = useState(false);
     const [sending, setSending] = useState(false);
 
-    useEffect(() => {
-        fetchData();
-    }, [candidatId, concoursId]);
-
-
-
-
-    const { data: candidatureData } = useQuery({
+    // ✅ Query avec gestion d'erreur et loading
+    const {
+        data: candidatureData,
+        isLoading: candidatureLoading,
+        error: candidatureError
+    } = useQuery({
         queryKey: ['candidature-complete', nupcan],
         queryFn: () => candidatureService.getCandidatureByNupcan(nupcan!),
         enabled: !!nupcan,
-        refetchInterval: 10000,
+        retry: 2,
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
+    // ✅ SÉCURITÉ : Vérifications avant déstructuration
+    const filiere = candidatureData?.filiere;
+    const isCandidatureReady = !!candidatureData && !!filiere;
 
+    // ✅ Loading global
+    const globalLoading = loading || candidatureLoading;
+
+    // ✅ useMemo pour éviter re-renders inutiles
+    const safeMatieres = useMemo(() => {
+        if (!isCandidatureReady || !filiere.matieres) return [];
+        return Array.isArray(filiere.matieres) ? filiere.matieres : [];
+    }, [isCandidatureReady, filiere]);
+
+    // Gestion erreur candidature
+    useEffect(() => {
+        if (candidatureError) {
+            console.error('Erreur chargement candidature:', candidatureError);
+            toast({
+                title: 'Erreur',
+                description: 'Impossible de charger les informations de candidature',
+                variant: 'destructive'
+            });
+        }
+    }, [candidatureError]);
 
     const fetchData = async () => {
+        if (!isCandidatureReady) {
+            console.log('⏳ Attente candidature data...');
+            return;
+        }
+
         try {
-
-            if(!candidatureData)return;
-            const { filiere}= candidatureData
             setLoading(true);
-
-            // Récupérer le candidat pour obtenir sa filière
-            const candidatResponse = await apiService.makeRequest(`/candidats/${candidatId}`, 'GET');
-            const filiereId = candidatureData.filiere?.filiere_id;
-
-            // Récupérer les matières de la filière du candidat
-            let matieresResponse;
-            if (filiereId) {
-                matieresResponse = await apiService.makeRequest(`/filieres/${filiereId}`, 'GET');
-                if (matieresResponse.success && matieresResponse.data?.matieres) {
-                    setMatieres(matieresResponse.data.matieres);
-                } else {
-                    setMatieres([]);
-                }
-            } else {
-                // Si pas de filière, récupérer toutes les matières
-                matieresResponse = await apiService.makeRequest('/matieres', 'GET');
-                if (matieresResponse.success && Array.isArray(matieresResponse.data)) {
-                    setMatieres(matieresResponse.data);
-                } else {
-                    setMatieres([]);
-                }
-            }
+            console.log('📥 Chargement données notes pour candidat:', candidatId);
 
             // Récupérer les notes existantes
             const notesResponse = await apiService.makeRequest(
@@ -102,21 +112,43 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                 const data = notesResponse.data as any;
                 setNotes(Array.isArray(data.notes) ? data.notes : []);
                 setMoyenne(data.moyenne || null);
+            } else {
+                setNotes([]);
+                setMoyenne(null);
             }
+
+            // Utiliser les matières de la filière si disponibles
+            if (safeMatieres.length > 0) {
+                setMatieres(safeMatieres);
+            } else {
+                // Fallback : récupérer toutes les matières
+                const matieresResponse = await apiService.makeRequest('/matieres', 'GET');
+                if (matieresResponse.success && Array.isArray(matieresResponse.data)) {
+                    setMatieres(matieresResponse.data);
+                }
+            }
+
         } catch (error) {
-            console.error('Erreur chargement données:', error);
+            console.error('Erreur chargement données notes:', error);
             toast({
                 title: 'Erreur',
-                description: 'Impossible de charger les données',
+                description: 'Impossible de charger les notes et matières',
                 variant: 'destructive'
             });
+            setNotes([]);
+            setMatieres([]);
         } finally {
             setLoading(false);
         }
     };
-    const {  filiere } = candidatureData;
+
+    // ✅ Recharger quand candidatureData change
+    useEffect(() => {
+        fetchData();
+    }, [isCandidatureReady, candidatId, concoursId]);
+
     const handleNoteChange = (matiere_id: number, value: string) => {
-        const noteValue = parseFloat(value);
+        const noteValue = parseFloat(value) || 0;
 
         if (value === '' || (noteValue >= 0 && noteValue <= 20)) {
             const existingNoteIndex = notes.findIndex(n => n.matiere_id === matiere_id);
@@ -146,7 +178,12 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             setSaving(true);
 
             const note = notes.find(n => n.matiere_id === matiere_id);
-            if (!note || note.note === undefined) {
+            if (!note || note.note === undefined || note.note === 0) {
+                toast({
+                    title: 'Erreur',
+                    description: 'Veuillez saisir une note valide (0-20)',
+                    variant: 'destructive'
+                });
                 return;
             }
 
@@ -163,9 +200,7 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                     title: 'Succès',
                     description: 'Note enregistrée avec succès'
                 });
-
-                // Rafraîchir les données
-                await fetchData();
+                await fetchData(); // Refresh
             } else {
                 toast({
                     title: 'Erreur',
@@ -188,6 +223,17 @@ const NotesManager: React.FC<NotesManagerProps> = ({
     const sendResults = async () => {
         try {
             setSending(true);
+
+            // Vérifier qu'il y a des notes
+            const validNotes = notes.filter(n => n.note && n.note > 0);
+            if (validNotes.length === 0) {
+                toast({
+                    title: 'Erreur',
+                    description: 'Aucune note valide à envoyer',
+                    variant: 'destructive'
+                });
+                return;
+            }
 
             const response = await apiService.makeRequest('/notes/envoyer-resultats', 'POST', {
                 candidat_id: candidatId,
@@ -218,16 +264,41 @@ const NotesManager: React.FC<NotesManagerProps> = ({
         }
     };
 
+    // ✅ ÉCRAN DE CHARGEMENT
+    if (globalLoading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        Gestion des notes - {candidatPrenom} {candidatNom}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col items-center justify-center h-32 space-y-4">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                        <p className="text-muted-foreground">Chargement des informations...</p>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
 
-    if (loading) {
+    // ✅ ERREUR CANDIDATURE
+    if (candidatureError || !isCandidatureReady) {
         return (
             <Card>
                 <CardHeader>
                     <CardTitle>Gestion des notes</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex justify-center items-center h-32">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <div className="text-center py-8">
+                        <p className="text-destructive mb-4">
+                            Impossible de charger les informations de candidature
+                        </p>
+                        <Button onClick={() => window.location.reload()}>
+                            Recharger la page
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -239,37 +310,51 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5"/>
+                        <BookOpen className="h-5 w-5" />
                         <span>Gestion des notes - {candidatPrenom} {candidatNom}</span>
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <h3 className="font-semibold text-lg text-blue-800">{filiere.nomfil || 'Non définie'}</h3>
-                            {filiere.description && <p className="text-blue-700 mt-2">{filiere.description}</p>}
+
+                        {/* ✅ Filière SÉCURISÉE */}
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <h3 className="font-semibold text-blue-800">
+                                {filiere.nomfil || 'Filière non définie'}
+                            </h3>
+                            {filiere.description && (
+                                <p className="text-blue-700 text-sm mt-1">{filiere.description}</p>
+                            )}
                         </div>
                     </div>
+
+                    {/* ✅ Moyenne sécurisée */}
                     {moyenne && (
-                        <Badge variant="outline" className="text-lg px-4 py-1">
-                            <Calculator className="h-4 w-4 mr-2"/>
+                        <Badge variant="outline" className="text-lg px-4 py-2">
+                            <Calculator className="h-4 w-4 mr-2" />
                             Moyenne: {moyenne}/20
                         </Badge>
                     )}
                 </CardTitle>
             </CardHeader>
-            <CardContent>
 
+            <CardContent>
                 <div className="space-y-4">
-                    {filiere.matieres.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">
-                            Aucune matière disponible
-                        </p>
+                    {/* ✅ Vérification matières sécurisée */}
+                    {safeMatieres.length === 0 ? (
+                        <div className="text-center py-8 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-yellow-800">
+                                Aucune matière disponible pour cette filière
+                            </p>
+                            <p className="text-yellow-700 text-sm mt-2">
+                                Vérifiez la configuration de la filière {filiere.nomfil}
+                            </p>
+                        </div>
                     ) : (
                         <>
-                            {filiere.matieres.map((matiere) => {
+                            {safeMatieres.map((matiere) => {
                                 const note = notes.find(n => n.matiere_id === matiere.id);
-                                
+
                                 return (
-                                    <div key={matiere.id} className="flex items-end gap-4 p-4 border rounded-lg">
+                                    <div key={matiere.id} className="flex items-end gap-4 p-4 border rounded-lg bg-gray-50">
                                         <div className="flex-1">
-                                            <Label htmlFor={`note-${matiere.id}`}>
+                                            <Label htmlFor={`note-${matiere.id}`} className="font-medium">
                                                 {matiere.nom_matiere}
                                                 <Badge variant="secondary" className="ml-2">
                                                     Coef. {matiere.coefficient}
@@ -289,23 +374,38 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                                         </div>
                                         <Button
                                             onClick={() => saveNote(matiere.id)}
-                                            disabled={saving || !note || note.note === undefined}
+                                            disabled={saving || !note || note.note === undefined || note.note === 0}
+                                            variant={note?.note && note.note > 0 ? "default" : "outline"}
                                         >
-                                            {saving ? 'Enregistrement...' : 'Enregistrer'}
+                                            {saving ? (
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            ) : (
+                                                'Enregistrer'
+                                            )}
                                         </Button>
                                     </div>
                                 );
                             })}
 
-                            {notes.length > 0 && (
-                                <div className="flex justify-end pt-4 border-t">
+                            {/* ✅ Bouton envoi sécurisé */}
+                            {notes.filter(n => n.note && n.note > 0).length > 0 && (
+                                <div className="flex justify-end pt-4 border-t bg-green-50 rounded-lg p-4">
                                     <Button
                                         onClick={sendResults}
                                         disabled={sending}
-                                        className="gap-2"
+                                        className="gap-2 bg-green-600 hover:bg-green-700"
                                     >
-                                        <Send className="h-4 w-4"/>
-                                        {sending ? 'Envoi en cours...' : 'Envoyer les résultats par email'}
+                                        {sending ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Envoi en cours...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="h-4 w-4" />
+                                                Envoyer les résultats par email
+                                            </>
+                                        )}
                                     </Button>
                                 </div>
                             )}

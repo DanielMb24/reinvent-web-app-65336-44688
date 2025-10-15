@@ -792,11 +792,14 @@ const DashboardCandidat = () => {
                 {/*</div>*/}
 
                 <div className="mb-8">
-                    <GradesBulletin nupcan={''} candidat={{
-                        nomcan: '',
-                        prncan: ''
+                    <GradesBulletin nupcan={nupcan!} candidat={{
+                        nomcan:candidat.nomcan,
+                        prncan: candidat.prncan,
+                        concourId : candidat.concours_id,
+                        libcnc : concours?.libcnc
                     }}   />
                 </div>
+
 
 
 

@@ -6,7 +6,9 @@ import { toast } from '@/hooks/use-toast';
 import { Download, BookOpen, Award } from 'lucide-react';
 import { apiService } from '@/services/api';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+
+import {useNavigate} from "react-router-dom";
 
 interface Note {
     id: number;
@@ -20,10 +22,13 @@ interface GradesBulletinProps {
     candidat: {
         nomcan: string;
         prncan: string;
+        concourId: number;
+        libcnc : string;
     };
 }
 
 const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => {
+    const navigate = useNavigate();
     const [notes, setNotes] = useState<Note[]>([]);
     const [moyenne, setMoyenne] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -35,8 +40,9 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
     const fetchNotes = async () => {
         try {
             setLoading(true);
-            const response = await apiService.makeRequest(`/grades/concours/${concoursId}`, 'GET');
-            
+
+            const response = await apiService.makeRequest(`/grades/candidat/${nupcan}`, 'GET');
+
             if (response.success && response.data) {
                 const data = response.data as any;
                 setNotes(data.notes || []);
@@ -48,32 +54,37 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
             setLoading(false);
         }
     };
-
+    // const downloadPDF = () => {
+    //     navigate(`/grades/${nupcan}`);
+    // };
     const downloadPDF = () => {
         const doc = new jsPDF();
-        
+
         // En-tête
         doc.setFontSize(20);
         doc.setTextColor(37, 99, 235);
         doc.text('BULLETIN DE NOTES', 105, 20, { align: 'center' });
-        
+
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0);
         doc.text('République Gabonaise - GABConcours', 105, 30, { align: 'center' });
-        
+        doc.setFontSize(14);
+        doc.text(`          Concours : ${candidat.libcnc} `, 7, 40);
+
+
         // Informations candidat
         doc.setFontSize(14);
         doc.text(`Candidat: ${candidat.prncan} ${candidat.nomcan}`, 20, 50);
         doc.text(`NUPCAN: ${nupcan}`, 20, 60);
-        
+
         // Tableau des notes
         const tableData = notes.map(note => [
             note.nommat,
             `${note.note}/20`,
             note.coefmat.toString()
         ]);
-        
-        (doc as any).autoTable({
+
+        autoTable(doc, {
             startY: 75,
             head: [['Matière', 'Note', 'Coefficient']],
             body: tableData,
@@ -88,20 +99,20 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
                 fontSize: 11
             }
         });
-        
-        // Moyenne
-        const finalY = (doc as any).lastAutoTable.finalY || 75;
+
+        const finalY = (doc as any).lastAutoTable?.finalY || 75;
+
         doc.setFontSize(16);
         doc.setTextColor(37, 99, 235);
         doc.text(`Moyenne Générale: ${moyenne || 'N/A'}/20`, 105, finalY + 20, { align: 'center' });
-        
+
         // Pied de page
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`Document édité le ${new Date().toLocaleDateString('fr-FR')}`, 105, 280, { align: 'center' });
-        
+
         doc.save(`Bulletin_${nupcan}_${new Date().toISOString().split('T')[0]}.pdf`);
-        
+
         toast({
             title: 'Succès',
             description: 'Bulletin téléchargé avec succès'
@@ -173,6 +184,10 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
                             <div>
                                 <span className="text-muted-foreground">NUPCAN:</span>
                                 <span className="ml-2 font-medium">{nupcan}</span>
+                            </div>
+                           <div>
+                                <span className="text-muted-foreground">Concours:</span>
+                                <span className="ml-2 font-medium">{candidat.libcnc}</span>
                             </div>
                         </div>
                     </div>

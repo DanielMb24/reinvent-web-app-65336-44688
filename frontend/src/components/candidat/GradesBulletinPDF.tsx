@@ -134,7 +134,7 @@ const GradesBulletinPDF: React.FC<GradesBulletinPDFProps> = ({
         {/* Résultat */}
         <div className={`p-4 rounded-lg text-center ${moyenneGenerale >= 10 ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'}`}>
           <p className="text-lg font-bold">
-            {moyenneGenerale >= 10 ? '✅ ADMISSIBLE' : '❌ NON ADMISSIBLE'}
+            {moyenneGenerale >= 10 ? '✅ ADMISSIBLE' : ' NON ADMISSIBLE'}
           </p>
         </div>
 

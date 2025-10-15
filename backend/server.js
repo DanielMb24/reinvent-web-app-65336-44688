@@ -8,93 +8,57 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ✅ CRÉATION DES RÉPERTOIRES AVANT TOUT
-const ensureDirectories = () => {
-    const dirs = [
-        './uploads/documents',
-        './uploads/photos',
-        './uploads/temp'
-    ];
+// Créer les répertoires uploads s'ils n'existent pas
+const uploadDirs = ['./uploads/documents', './uploads/photos'];
+uploadDirs.forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, {recursive: true});
+        console.log(` Répertoire créé: ${dir}`);
+    }
+});
 
-    dirs.forEach(dir => {
-        const fullPath = path.join(__dirname, dir);
-        if (!fs.existsSync(fullPath)) {
-            fs.mkdirSync(fullPath, { recursive: true });
-            console.log(`📁 Répertoire créé: ${fullPath}`);
-        } else {
-            console.log(`📁 Répertoire existe: ${fullPath}`);
-        }
-    });
-};
-
-// Créer les répertoires au démarrage
-ensureDirectories();
-
-// ✅ MIDDLEWARE CORS AVANT TOUT
+// Middleware
 app.use(cors);
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
-// ✅ bodyParser AVANT multer (IMPORTANT)
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
-
-// ✅ CONFIGURATION MULTER GLOBALE CORRIGÉE
+// Configuration multer pour l'upload de fichiers
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Utiliser uploads/temp pour les scans temporaires
-        const uploadDir = path.join(__dirname, './uploads/temp');
-
-        // Vérifier/créer le dossier à chaque upload
-        fs.mkdir(uploadDir, { recursive: true }, (err) => {
-            if (err) {
-                console.error('❌ Erreur création dossier temp:', err);
-                return cb(err, null);
-            }
-            console.log('📁 Dossier temp pour scan:', uploadDir);
-            cb(null, uploadDir);
-        });
+        const uploadDir = './uploads/documents';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, {recursive: true});
+        }
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        const filename = `scan-${uniqueSuffix}${ext}`;
-        console.log('📄 Nom fichier scan généré:', filename);
-        cb(null, filename);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
-
-const fileFilter = (req, file, cb) => {
-    console.log('🔍 Filtre multer - Fichier:', file.originalname, 'Type:', file.mimetype);
-
-    const allowedTypes = [
-        'application/pdf',
-        'image/jpeg',
-        'image/jpg',
-        'image/png'
-    ];
-
-    if (allowedTypes.includes(file.mimetype)) {
-        console.log('✅ Type accepté:', file.mimetype);
-        cb(null, true);
-    } else {
-        console.error('❌ Type refusé:', file.mimetype);
-        cb(new Error(`Type de fichier non autorisé: ${file.mimetype}. Formats acceptés: PDF, JPG, PNG`), false);
-    }
-};
-
-// Instance multer pour les scans
-const scanUpload = multer({
+const uploadsPath = path.join(__dirname, 'uploads/temp');
+if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+    console.log('📁 Dossier uploads créé:', uploadsPath);
+} else {
+    console.log('📁 Dossier uploads existe:', uploadsPath);
+}
+const upload = multer({
     storage: storage,
-    limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB
-        files: 1
-    },
-    fileFilter: fileFilter
+    limits: {fileSize: 10 * 1024 * 1024}, // 10MB max
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Type de fichier non autorisé'), false);
+        }
+    }
 });
 
-// ✅ Serveur statique APRÈS création des dossiers
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static('uploads'));
 
-// ✅ Routes (exporter scanUpload pour utilisation dans candidatureRoutes)
+// Routes
 const concoursRoutes = require('./routes/concours');
 const candidatsRoutes = require('./routes/candidats');
 const provincesRoutes = require('./routes/provinces');
@@ -117,21 +81,19 @@ const notificationsRoutes = require('./routes/notifications');
 const messagesRoutes = require('./routes/messages');
 const statsRoutes = require('./routes/stats');
 const supportRoutes = require('./routes/supportRoutes');
+const messageRoutes = require('./routes/messages');
 const exportRoutes = require('./routes/exports');
 const adminManagementRoutes = require('./routes/admin-management');
 const documentsExtendedRoutes = require('./routes/documents-extended');
-const subAdminsRoutes = require('./routes/sub-admins');
 const notesRoutes = require('./routes/notes');
 const userRolesRoutes = require('./routes/user-roles');
 const candidatureRoutes = require('./routes/candidatures');
-const candidatureScanRoutes = require('./routes/candidature');
-
-// API Routes (éviter les doublons)
+// API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
 app.use('/api/provinces', provincesRoutes);
 app.use('/api/niveaux', niveauxRoutes);
-app.use('/api/filiere', filieresRoutes);
+app.use('/api/filieres', filieresRoutes);
 app.use('/api/etablissements', etablissementsRoutes);
 app.use('/api/matieres', matieresRoutes);
 app.use('/api/participations', participationsRoutes);
@@ -143,7 +105,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/etudiants', etudiantsRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/paiements', paiementsRoutes);
-app.use('/api/document-validation', documentValidationRoutes);
+app.use('/api/documentvalidation', documentValidationRoutes);
 app.use('/api/admin-documents', adminDocumentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);
@@ -153,141 +115,119 @@ app.use('/api/exports', exportRoutes);
 app.use('/api/admin-management', adminManagementRoutes);
 app.use('/api/documents-extended', documentsExtendedRoutes);
 app.use('/api/notes', notesRoutes);
-app.use('/api/grades', notesRoutes);
+app.use('/api/grades', notesRoutes); // Alias for grades
 app.use('/api/user-roles', userRolesRoutes);
+app.use('/api/documents', documentsRoutes);
+app.use('/api/paiements', paiementsRoutes);
+app.use('/api/document-validation', documentValidationRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/grades', notesRoutes); // Alias for grades
 app.use('/api/candidatures', candidatureRoutes);
-app.use('/api/candidatures', candidatureScanRoutes);
-app.use('/api/sub-admins', subAdminsRoutes);
-
-// Routes admin auth
-const { router: adminAuthRouter } = require('./routes/adminAuth');
+const {router: adminAuthRouter} = require('./routes/adminAuth');
 app.use('/api/admin/auth', adminAuthRouter);
+app.use('/api/admin/management', require('./routes/adminManagement'));
+app.use('/api/admin', adminDocumentsRoutes);
+app.use('/api/exports', exportRoutes);
+app.use('/api/admin/management', adminManagementRoutes);
+app.use('/api/documents-extended', documentsExtendedRoutes);
+app.use('/api/user-roles', userRolesRoutes);
 
-// ✅ Route de test étendue
+// Importer les fonctions de base de données
+const {createConnection, testConnection} = require('./config/database');
+
+// Route de test
 app.get('/api/test', (req, res) => {
     res.json({
-        success: true,
         message: 'API GabConcours fonctionnelle!',
         timestamp: new Date().toISOString(),
-        serverInfo: {
-            port: PORT,
-            nodeEnv: process.env.NODE_ENV,
-            uploadsDir: path.join(__dirname, 'uploads'),
-            multerConfig: 'OK'
-        },
-        availableEndpoints: [
-            'GET /api/test',
-            'POST /api/candidatures/scan-document',
-            'GET /api/concours',
-            'GET /api/provinces',
-            'GET /api/candidats'
+        routes_disponibles: [
+            '/api/concours',
+            '/api/candidats',
+            '/api/provinces',
+            '/api/niveaux',
+            '/api/filieres',
+            '/api/etablissements',
+            '/api/matieres',
+            '/api/participations',
+            '/api/dossiers',
+            '/api/sessions',
+            '/api/documents',
+            '/api/paiements',
+            '/api/statistics',
+            '/api/admin',
+            '/api/email',
+            '/api/etudiants',
+            '/api/document-validation',
+            '/api/notifications',
+            '/api/adminAuthRouter',
+            '/api/auth',
+            '/api/management'
+
         ]
     });
 });
 
-// ✅ Route de test pour scan
-app.post('/api/candidatures/test-scan', scanUpload.single('document'), (req, res) => {
-    console.log('🧪 Test scan reçu:', !!req.file);
-    if (req.file) {
-        res.json({
-            success: true,
-            message: 'Upload multer fonctionne!',
-            file: {
-                originalname: req.file.originalname,
-                mimetype: req.file.mimetype,
-                size: req.file.size
-            }
-        });
-    } else {
-        res.status(400).json({
-            success: false,
-            error: 'Aucun fichier reçu'
-        });
-    }
-});
-
-// ✅ MIDDLEWARE GESTION ERREURS MULTER AVANT le général
+// Middleware de gestion d'erreurs
 app.use((error, req, res, next) => {
-    console.error('💥 ERREUR MULTER/SERVEUR:', error);
-
-    // Erreurs Multer spécifiques
+    console.error('Erreur serveur:', error);
     if (error instanceof multer.MulterError) {
         if (error.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
                 success: false,
-                error: 'Fichier trop volumineux (maximum 10MB)'
-            });
-        }
-        if (error.code === 'LIMIT_FILE_COUNT') {
-            return res.status(400).json({
-                success: false,
-                error: 'Un seul fichier autorisé'
-            });
-        }
-        if (error.code === 'MULTIPART_INVALID') {
-            return res.status(400).json({
-                success: false,
-                error: 'Format de requête invalide'
+                message: 'Fichier trop volumineux (max 10MB)'
             });
         }
     }
-
-    // Erreurs de fileFilter
-    if (error.message && error.message.includes('Type de fichier non autorisé')) {
-        return res.status(400).json({
-            success: false,
-            error: error.message
-        });
-    }
-
-    // Erreur générale
     res.status(500).json({
         success: false,
-        error: 'Erreur interne du serveur',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: 'Erreur interne du serveur',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
 });
 
-// ✅ Route 404 APRÈS toutes les routes
+// Route 404
 app.use('*', (req, res) => {
-    console.log(`❓ Route non trouvée: ${req.method} ${req.originalUrl}`);
     res.status(404).json({
         success: false,
-        error: `Route non trouvée: ${req.method} ${req.originalUrl}`,
-        suggestion: 'Essayez /api/test ou /api/candidatures/scan-document'
+        message: `Route non trouvée: ${req.method} ${req.originalUrl}`,
+        available_routes: [
+            'GET /api/test',
+            'GET /api/concours',
+            'GET /api/candidats',
+            'GET /api/documents/nupcan/:nupcan',
+            'GET /api/paiements/nupcan/:nupcan'
+        ]
     });
 });
-
-// Importer les fonctions de base de données
-const { createConnection, testConnection } = require('./config/database');
 
 // Fonction pour démarrer le serveur
 const startServer = async () => {
     try {
-        console.log('🔌 Initialisation de la connexion à la base de données...');
+        // Initialiser la connexion à la base de données avant de démarrer le serveur
+        console.log(' Initialisation de la connexion à la base de données...');
         await createConnection();
         await testConnection();
-        console.log('✅ Connexion MySQL établie avec succès');
-        console.log(`   Base: ${process.env.DB_NAME || 'gabconcoursv5'}`);
+        console.log(' Connexion à MySQL établie');
+        console.log(`  Base de données: ${process.env.DB_NAME || 'gabconcoursv5'}`);
 
-        // Démarrer le serveur
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`\n🚀 SERVEUR DÉMARRÉ avec succès!`);
-            console.log(`   📍 Port: ${PORT}`);
-            console.log(`   🌐 URL: http://localhost:${PORT}`);
-            console.log(`   📁 Uploads: http://localhost:${PORT}/uploads`);
-            console.log(`   🧪 Test: http://localhost:${PORT}/api/test`);
-            console.log(`   🔍 Scan: POST http://localhost:${PORT}/api/candidatures/scan-document`);
-            console.log(`\n📋 SCAN DOCUMENT prêt à l'emploi!`);
+        // Démarrer le serveur seulement après la connexion à la DB
+        app.listen(PORT, () => {
+            console.log(` Serveur démarré sur le port ${PORT}`);
+            console.log(` API accessible sur: http://localhost:${PORT}/api`);
+            console.log(` Interface admin: http://localhost:5173/admin`);
         });
-
     } catch (error) {
-        console.error('💥 Erreur de connexion base de données:', error);
+        console.error(' Erreur de connexion à la base de données:', error.message);
+        console.error(' Arrêt du serveur - Impossible de se connecter à la base de données');
         process.exit(1);
     }
 };
 
-// Démarrer
+// Démarrer le serveur
 startServer();
 
 module.exports = app;

@@ -136,6 +136,7 @@ function App() {
                             <Route path="filieres" element={<GestionFilieres/>}/>
                             <Route path="notes" element={<GradeManagement/>}/>
                             <Route path="messagerie" element={<MessagerieAdmin/>}/>
+
  <Route path="AdminProfile" element={<AdminProfile admin={{
                                     id: 0,
                                     nom: '',
