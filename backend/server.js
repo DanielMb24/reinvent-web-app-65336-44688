@@ -120,12 +120,11 @@ const supportRoutes = require('./routes/supportRoutes');
 const exportRoutes = require('./routes/exports');
 const adminManagementRoutes = require('./routes/admin-management');
 const documentsExtendedRoutes = require('./routes/documents-extended');
+const subAdminsRoutes = require('./routes/sub-admins');
 const notesRoutes = require('./routes/notes');
 const userRolesRoutes = require('./routes/user-roles');
 const candidatureRoutes = require('./routes/candidatures');
-
-// Passer scanUpload à candidatureRoutes si nécessaire
-// candidatureRoutes.setScanUpload(scanUpload);
+const candidatureScanRoutes = require('./routes/candidature');
 
 // API Routes (éviter les doublons)
 app.use('/api/concours', concoursRoutes);
@@ -157,6 +156,8 @@ app.use('/api/notes', notesRoutes);
 app.use('/api/grades', notesRoutes);
 app.use('/api/user-roles', userRolesRoutes);
 app.use('/api/candidatures', candidatureRoutes);
+app.use('/api/candidatures', candidatureScanRoutes);
+app.use('/api/sub-admins', subAdminsRoutes);
 
 // Routes admin auth
 const { router: adminAuthRouter } = require('./routes/adminAuth');

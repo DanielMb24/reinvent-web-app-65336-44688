@@ -2,6 +2,8 @@ import React from 'react';
 import {Link} from 'react-router-dom';
 import {Button} from '@/components/ui/button';
 import {Settings} from 'lucide-react';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 const Header = () => {
     return (
@@ -29,7 +31,9 @@ const Header = () => {
                         </Link>
                     </nav>
 
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                        <LanguageSwitcher />
+                        <ThemeSwitcher />
                         <Button variant="ghost" size="sm" asChild>
                             <Link to="/admin">
                                 <Settings className="h-4 w-4 mr-2"/>
