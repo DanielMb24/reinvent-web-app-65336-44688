@@ -54,9 +54,7 @@ const GradesBulletin: React.FC<GradesBulletinProps> = ({ nupcan, candidat }) => 
             setLoading(false);
         }
     };
-    // const downloadPDF = () => {
-    //     navigate(`/grades/${nupcan}`);
-    // };
+
     const downloadPDF = () => {
         const doc = new jsPDF();
 

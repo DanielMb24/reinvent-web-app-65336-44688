@@ -1,0 +1,263 @@
+<html>
+<head>
+<title>GradesBulletin.tsx</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+.s5 { color: #e8bf6a;}
+.s6 { color: #bababa;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+GradesBulletin.tsx</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">React</span><span class="s0">, </span><span class="s1">{ useState</span><span class="s0">, </span><span class="s1">useEffect } from </span><span class="s2">'react'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ Card</span><span class="s0">, </span><span class="s1">CardContent</span><span class="s0">, </span><span class="s1">CardHeader</span><span class="s0">, </span><span class="s1">CardTitle } from </span><span class="s2">'@/components/ui/card'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ Button } from </span><span class="s2">'@/components/ui/button'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ Badge } from </span><span class="s2">'@/components/ui/badge'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ toast } from </span><span class="s2">'@/hooks/use-toast'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ Download</span><span class="s0">, </span><span class="s1">BookOpen</span><span class="s0">, </span><span class="s1">Award } from </span><span class="s2">'lucide-react'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">{ apiService } from </span><span class="s2">'@/services/api'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">jsPDF from </span><span class="s2">'jspdf'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">autoTable from </span><span class="s2">'jspdf-autotable'</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">{useNavigate} from </span><span class="s2">&quot;react-router-dom&quot;</span><span class="s0">;</span>
+
+<span class="s0">interface </span><span class="s1">Note {</span>
+    <span class="s1">id: number</span><span class="s0">;</span>
+    <span class="s1">note: number</span><span class="s0">;</span>
+    <span class="s1">nommat: string</span><span class="s0">;</span>
+    <span class="s1">coefmat: number</span><span class="s0">;</span>
+<span class="s1">}</span>
+
+<span class="s0">interface </span><span class="s1">GradesBulletinProps {</span>
+    <span class="s1">nupcan: string</span><span class="s0">;</span>
+    <span class="s1">candidat: {</span>
+        <span class="s1">nomcan: string</span><span class="s0">;</span>
+        <span class="s1">prncan: string</span><span class="s0">;</span>
+        <span class="s1">concourId: number</span><span class="s0">;</span>
+        <span class="s1">libcnc : string</span><span class="s0">;</span>
+    <span class="s1">}</span><span class="s0">;</span>
+<span class="s1">}</span>
+
+<span class="s0">const </span><span class="s1">GradesBulletin: React.FC&lt;GradesBulletinProps&gt; = ({ nupcan</span><span class="s0">, </span><span class="s1">candidat }) =&gt; {</span>
+    <span class="s0">const </span><span class="s1">navigate = useNavigate()</span><span class="s0">;</span>
+    <span class="s0">const </span><span class="s1">[notes</span><span class="s0">, </span><span class="s1">setNotes] = useState&lt;Note[]&gt;([])</span><span class="s0">;</span>
+    <span class="s0">const </span><span class="s1">[moyenne</span><span class="s0">, </span><span class="s1">setMoyenne] = useState&lt;string | </span><span class="s0">null</span><span class="s1">&gt;(</span><span class="s0">null</span><span class="s1">)</span><span class="s0">;</span>
+    <span class="s0">const </span><span class="s1">[loading</span><span class="s0">, </span><span class="s1">setLoading] = useState(</span><span class="s0">true</span><span class="s1">)</span><span class="s0">;</span>
+
+    <span class="s1">useEffect(() =&gt; {</span>
+        <span class="s1">fetchNotes()</span><span class="s0">;</span>
+    <span class="s1">}</span><span class="s0">, </span><span class="s1">[nupcan])</span><span class="s0">;</span>
+
+    <span class="s0">const </span><span class="s1">fetchNotes = async () =&gt; {</span>
+        <span class="s0">try </span><span class="s1">{</span>
+            <span class="s1">setLoading(</span><span class="s0">true</span><span class="s1">)</span><span class="s0">;</span>
+
+            <span class="s0">const </span><span class="s1">response = </span><span class="s0">await </span><span class="s1">apiService.makeRequest(</span><span class="s2">`/grades/candidat/</span><span class="s1">${nupcan}</span><span class="s2">`</span><span class="s0">, </span><span class="s2">'GET'</span><span class="s1">)</span><span class="s0">;</span>
+
+            <span class="s0">if </span><span class="s1">(response.success &amp;&amp; response.data) {</span>
+                <span class="s0">const </span><span class="s1">data = response.data as any</span><span class="s0">;</span>
+                <span class="s1">setNotes(data.notes || [])</span><span class="s0">;</span>
+                <span class="s1">setMoyenne(data.moyenneGenerale)</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">} </span><span class="s0">catch </span><span class="s1">(error) {</span>
+            <span class="s1">console.error(</span><span class="s2">'Erreur chargement notes:'</span><span class="s0">, </span><span class="s1">error)</span><span class="s0">;</span>
+        <span class="s1">} </span><span class="s0">finally </span><span class="s1">{</span>
+            <span class="s1">setLoading(</span><span class="s0">false</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span><span class="s0">;</span>
+    <span class="s3">// const downloadPDF = () =&gt; {</span>
+    <span class="s3">//     navigate(`/grades/${nupcan}`);</span>
+    <span class="s3">// };</span>
+    <span class="s0">const </span><span class="s1">downloadPDF = () =&gt; {</span>
+        <span class="s0">const </span><span class="s1">doc = </span><span class="s0">new </span><span class="s1">jsPDF()</span><span class="s0">;</span>
+
+        <span class="s3">// En-tête</span>
+        <span class="s1">doc.setFontSize(</span><span class="s4">20</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.setTextColor(</span><span class="s4">37</span><span class="s0">, </span><span class="s4">99</span><span class="s0">, </span><span class="s4">235</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">'BULLETIN DE NOTES'</span><span class="s0">, </span><span class="s4">105</span><span class="s0">, </span><span class="s4">20</span><span class="s0">, </span><span class="s1">{ align: </span><span class="s2">'center' </span><span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s1">doc.setFontSize(</span><span class="s4">12</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.setTextColor(</span><span class="s4">0</span><span class="s0">, </span><span class="s4">0</span><span class="s0">, </span><span class="s4">0</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">'République Gabonaise - GABConcours'</span><span class="s0">, </span><span class="s4">105</span><span class="s0">, </span><span class="s4">30</span><span class="s0">, </span><span class="s1">{ align: </span><span class="s2">'center' </span><span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">doc.setFontSize(</span><span class="s4">14</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">`          Concours : </span><span class="s1">${candidat.libcnc} </span><span class="s2">`</span><span class="s0">, </span><span class="s4">7</span><span class="s0">, </span><span class="s4">40</span><span class="s1">)</span><span class="s0">;</span>
+
+
+        <span class="s3">// Informations candidat</span>
+        <span class="s1">doc.setFontSize(</span><span class="s4">14</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">`Candidat: </span><span class="s1">${candidat.prncan} ${candidat.nomcan}</span><span class="s2">`</span><span class="s0">, </span><span class="s4">20</span><span class="s0">, </span><span class="s4">50</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">`NUPCAN: </span><span class="s1">${nupcan}</span><span class="s2">`</span><span class="s0">, </span><span class="s4">20</span><span class="s0">, </span><span class="s4">60</span><span class="s1">)</span><span class="s0">;</span>
+
+        <span class="s3">// Tableau des notes</span>
+        <span class="s0">const </span><span class="s1">tableData = notes.map(note =&gt; [</span>
+            <span class="s1">note.nommat</span><span class="s0">,</span>
+            <span class="s2">`</span><span class="s1">${note.note}</span><span class="s2">/20`</span><span class="s0">,</span>
+            <span class="s1">note.coefmat.toString()</span>
+        <span class="s1">])</span><span class="s0">;</span>
+
+        <span class="s1">autoTable(doc</span><span class="s0">, </span><span class="s1">{</span>
+            <span class="s1">startY: </span><span class="s4">75</span><span class="s0">,</span>
+            <span class="s1">head: [[</span><span class="s2">'Matière'</span><span class="s0">, </span><span class="s2">'Note'</span><span class="s0">, </span><span class="s2">'Coefficient'</span><span class="s1">]]</span><span class="s0">,</span>
+            <span class="s1">body: tableData</span><span class="s0">,</span>
+            <span class="s1">theme: </span><span class="s2">'grid'</span><span class="s0">,</span>
+            <span class="s1">headStyles: {</span>
+                <span class="s1">fillColor: [</span><span class="s4">37</span><span class="s0">, </span><span class="s4">99</span><span class="s0">, </span><span class="s4">235</span><span class="s1">]</span><span class="s0">,</span>
+                <span class="s1">textColor: </span><span class="s4">255</span><span class="s0">,</span>
+                <span class="s1">fontSize: </span><span class="s4">12</span><span class="s0">,</span>
+                <span class="s1">fontStyle: </span><span class="s2">'bold'</span>
+            <span class="s1">}</span><span class="s0">,</span>
+            <span class="s1">bodyStyles: {</span>
+                <span class="s1">fontSize: </span><span class="s4">11</span>
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s0">const </span><span class="s1">finalY = (doc as any).lastAutoTable?.finalY || </span><span class="s4">75</span><span class="s0">;</span>
+
+        <span class="s1">doc.setFontSize(</span><span class="s4">16</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.setTextColor(</span><span class="s4">37</span><span class="s0">, </span><span class="s4">99</span><span class="s0">, </span><span class="s4">235</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">`Moyenne Générale: </span><span class="s1">${moyenne || </span><span class="s2">'N/A'</span><span class="s1">}</span><span class="s2">/20`</span><span class="s0">, </span><span class="s4">105</span><span class="s0">, </span><span class="s1">finalY + </span><span class="s4">20</span><span class="s0">, </span><span class="s1">{ align: </span><span class="s2">'center' </span><span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s3">// Pied de page</span>
+        <span class="s1">doc.setFontSize(</span><span class="s4">10</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.setTextColor(</span><span class="s4">100</span><span class="s0">, </span><span class="s4">100</span><span class="s0">, </span><span class="s4">100</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">doc.text(</span><span class="s2">`Document édité le </span><span class="s1">${</span><span class="s0">new </span><span class="s1">Date().toLocaleDateString(</span><span class="s2">'fr-FR'</span><span class="s1">)}</span><span class="s2">`</span><span class="s0">, </span><span class="s4">105</span><span class="s0">, </span><span class="s4">280</span><span class="s0">, </span><span class="s1">{ align: </span><span class="s2">'center' </span><span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s1">doc.save(</span><span class="s2">`Bulletin_</span><span class="s1">${nupcan}</span><span class="s2">_</span><span class="s1">${</span><span class="s0">new </span><span class="s1">Date().toISOString().split(</span><span class="s2">'T'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">]}</span><span class="s2">.pdf`</span><span class="s1">)</span><span class="s0">;</span>
+
+        <span class="s1">toast({</span>
+            <span class="s1">title: </span><span class="s2">'Succès'</span><span class="s0">,</span>
+            <span class="s1">description: </span><span class="s2">'Bulletin téléchargé avec succès'</span>
+        <span class="s1">})</span><span class="s0">;</span>
+    <span class="s1">}</span><span class="s0">;</span>
+
+    <span class="s0">if </span><span class="s1">(loading) {</span>
+        <span class="s0">return </span><span class="s1">(</span>
+            <span class="s5">&lt;Card&gt;</span>
+                <span class="s5">&lt;CardHeader&gt;</span>
+                    <span class="s5">&lt;CardTitle </span><span class="s6">className</span><span class="s2">=&quot;flex items-center gap-2&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;BookOpen </span><span class="s6">className</span><span class="s2">=&quot;h-5 w-5&quot; </span><span class="s5">/&gt;</span>
+                        <span class="s1">Bulletin de Notes</span>
+                    <span class="s5">&lt;/CardTitle&gt;</span>
+                <span class="s5">&lt;/CardHeader&gt;</span>
+                <span class="s5">&lt;CardContent&gt;</span>
+                    <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;flex justify-center items-center h-32&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;animate-spin rounded-full h-8 w-8 border-b-2 border-primary&quot;</span><span class="s5">&gt;&lt;/div&gt;</span>
+                    <span class="s5">&lt;/div&gt;</span>
+                <span class="s5">&lt;/CardContent&gt;</span>
+            <span class="s5">&lt;/Card&gt;</span>
+        <span class="s1">)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">if </span><span class="s1">(notes.length === </span><span class="s4">0</span><span class="s1">) {</span>
+        <span class="s0">return </span><span class="s1">(</span>
+            <span class="s5">&lt;Card&gt;</span>
+                <span class="s5">&lt;CardHeader&gt;</span>
+                    <span class="s5">&lt;CardTitle </span><span class="s6">className</span><span class="s2">=&quot;flex items-center gap-2&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;BookOpen </span><span class="s6">className</span><span class="s2">=&quot;h-5 w-5&quot; </span><span class="s5">/&gt;</span>
+                        <span class="s1">Bulletin de Notes</span>
+                    <span class="s5">&lt;/CardTitle&gt;</span>
+                <span class="s5">&lt;/CardHeader&gt;</span>
+                <span class="s5">&lt;CardContent&gt;</span>
+                    <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;text-center py-8 text-muted-foreground&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;BookOpen </span><span class="s6">className</span><span class="s2">=&quot;h-12 w-12 mx-auto mb-4 opacity-50&quot; </span><span class="s5">/&gt;</span>
+                        <span class="s5">&lt;p&gt;</span><span class="s1">Aucune note disponible pour le moment</span><span class="s5">&lt;/p&gt;</span>
+                        <span class="s5">&lt;p </span><span class="s6">className</span><span class="s2">=&quot;text-sm mt-2&quot;</span><span class="s5">&gt;</span><span class="s1">Vos notes seront affichées ici dès qu'elles seront saisies.</span><span class="s5">&lt;/p&gt;</span>
+                    <span class="s5">&lt;/div&gt;</span>
+                <span class="s5">&lt;/CardContent&gt;</span>
+            <span class="s5">&lt;/Card&gt;</span>
+        <span class="s1">)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">return </span><span class="s1">(</span>
+        <span class="s5">&lt;Card&gt;</span>
+            <span class="s5">&lt;CardHeader&gt;</span>
+                <span class="s5">&lt;CardTitle </span><span class="s6">className</span><span class="s2">=&quot;flex items-center justify-between&quot;</span><span class="s5">&gt;</span>
+                    <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;flex items-center gap-2&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;BookOpen </span><span class="s6">className</span><span class="s2">=&quot;h-5 w-5&quot; </span><span class="s5">/&gt;</span>
+                        <span class="s1">Bulletin de Notes</span>
+                    <span class="s5">&lt;/div&gt;</span>
+                    <span class="s5">&lt;Button </span><span class="s6">onClick</span><span class="s2">=</span><span class="s1">{downloadPDF} </span><span class="s6">variant</span><span class="s2">=&quot;outline&quot; </span><span class="s6">className</span><span class="s2">=&quot;gap-2&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;Download </span><span class="s6">className</span><span class="s2">=&quot;h-4 w-4&quot; </span><span class="s5">/&gt;</span>
+                        <span class="s1">Télécharger PDF</span>
+                    <span class="s5">&lt;/Button&gt;</span>
+                <span class="s5">&lt;/CardTitle&gt;</span>
+            <span class="s5">&lt;/CardHeader&gt;</span>
+            <span class="s5">&lt;CardContent&gt;</span>
+                <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;space-y-6&quot;</span><span class="s5">&gt;</span>
+                    <span class="s1">{</span><span class="s3">/* Informations candidat */</span><span class="s1">}</span>
+                    <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;bg-muted p-4 rounded-lg&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;h3 </span><span class="s6">className</span><span class="s2">=&quot;font-semibold mb-2&quot;</span><span class="s5">&gt;</span><span class="s1">Informations</span><span class="s5">&lt;/h3&gt;</span>
+                        <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;grid grid-cols-2 gap-2 text-sm&quot;</span><span class="s5">&gt;</span>
+                            <span class="s5">&lt;div&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;text-muted-foreground&quot;</span><span class="s5">&gt;</span><span class="s1">Nom:</span><span class="s5">&lt;/span&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;ml-2 font-medium&quot;</span><span class="s5">&gt;</span><span class="s1">{candidat.prncan} {candidat.nomcan}</span><span class="s5">&lt;/span&gt;</span>
+                            <span class="s5">&lt;/div&gt;</span>
+                            <span class="s5">&lt;div&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;text-muted-foreground&quot;</span><span class="s5">&gt;</span><span class="s1">NUPCAN:</span><span class="s5">&lt;/span&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;ml-2 font-medium&quot;</span><span class="s5">&gt;</span><span class="s1">{nupcan}</span><span class="s5">&lt;/span&gt;</span>
+                            <span class="s5">&lt;/div&gt;</span>
+                           <span class="s5">&lt;div&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;text-muted-foreground&quot;</span><span class="s5">&gt;</span><span class="s1">Concours:</span><span class="s5">&lt;/span&gt;</span>
+                                <span class="s5">&lt;span </span><span class="s6">className</span><span class="s2">=&quot;ml-2 font-medium&quot;</span><span class="s5">&gt;</span><span class="s1">{candidat.libcnc}</span><span class="s5">&lt;/span&gt;</span>
+                            <span class="s5">&lt;/div&gt;</span>
+                        <span class="s5">&lt;/div&gt;</span>
+                    <span class="s5">&lt;/div&gt;</span>
+
+                    <span class="s1">{</span><span class="s3">/* Tableau des notes */</span><span class="s1">}</span>
+                    <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;border rounded-lg overflow-hidden&quot;</span><span class="s5">&gt;</span>
+                        <span class="s5">&lt;table </span><span class="s6">className</span><span class="s2">=&quot;w-full&quot;</span><span class="s5">&gt;</span>
+                            <span class="s5">&lt;thead </span><span class="s6">className</span><span class="s2">=&quot;bg-primary text-primary-foreground&quot;</span><span class="s5">&gt;</span>
+                                <span class="s5">&lt;tr&gt;</span>
+                                    <span class="s5">&lt;th </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3 text-left&quot;</span><span class="s5">&gt;</span><span class="s1">Matière</span><span class="s5">&lt;/th&gt;</span>
+                                    <span class="s5">&lt;th </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3 text-center&quot;</span><span class="s5">&gt;</span><span class="s1">Note</span><span class="s5">&lt;/th&gt;</span>
+                                    <span class="s5">&lt;th </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3 text-center&quot;</span><span class="s5">&gt;</span><span class="s1">Coefficient</span><span class="s5">&lt;/th&gt;</span>
+                                <span class="s5">&lt;/tr&gt;</span>
+                            <span class="s5">&lt;/thead&gt;</span>
+                            <span class="s5">&lt;tbody </span><span class="s6">className</span><span class="s2">=&quot;divide-y&quot;</span><span class="s5">&gt;</span>
+                                <span class="s1">{notes.map((note</span><span class="s0">, </span><span class="s1">index) =&gt; (</span>
+                                    <span class="s5">&lt;tr </span><span class="s6">key</span><span class="s2">=</span><span class="s1">{index} </span><span class="s6">className</span><span class="s2">=&quot;hover:bg-muted/50&quot;</span><span class="s5">&gt;</span>
+                                        <span class="s5">&lt;td </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3&quot;</span><span class="s5">&gt;</span><span class="s1">{note.nommat}</span><span class="s5">&lt;/td&gt;</span>
+                                        <span class="s5">&lt;td </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3 text-center font-semibold&quot;</span><span class="s5">&gt;</span><span class="s1">{note.note}/20</span><span class="s5">&lt;/td&gt;</span>
+                                        <span class="s5">&lt;td </span><span class="s6">className</span><span class="s2">=&quot;px-4 py-3 text-center&quot;</span><span class="s5">&gt;</span>
+                                            <span class="s5">&lt;Badge </span><span class="s6">variant</span><span class="s2">=&quot;secondary&quot;</span><span class="s5">&gt;</span><span class="s1">{note.coefmat}</span><span class="s5">&lt;/Badge&gt;</span>
+                                        <span class="s5">&lt;/td&gt;</span>
+                                    <span class="s5">&lt;/tr&gt;</span>
+                                <span class="s1">))}</span>
+                            <span class="s5">&lt;/tbody&gt;</span>
+                        <span class="s5">&lt;/table&gt;</span>
+                    <span class="s5">&lt;/div&gt;</span>
+
+                    <span class="s1">{</span><span class="s3">/* Moyenne */</span><span class="s1">}</span>
+                    <span class="s1">{moyenne &amp;&amp; (</span>
+                        <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;bg-primary/10 border-2 border-primary rounded-lg p-6 text-center&quot;</span><span class="s5">&gt;</span>
+                            <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;flex items-center justify-center gap-2 mb-2&quot;</span><span class="s5">&gt;</span>
+                                <span class="s5">&lt;Award </span><span class="s6">className</span><span class="s2">=&quot;h-6 w-6 text-primary&quot; </span><span class="s5">/&gt;</span>
+                                <span class="s5">&lt;h3 </span><span class="s6">className</span><span class="s2">=&quot;text-lg font-semibold&quot;</span><span class="s5">&gt;</span><span class="s1">Moyenne Générale</span><span class="s5">&lt;/h3&gt;</span>
+                            <span class="s5">&lt;/div&gt;</span>
+                            <span class="s5">&lt;div </span><span class="s6">className</span><span class="s2">=&quot;text-4xl font-bold text-primary&quot;</span><span class="s5">&gt;</span>
+                                <span class="s1">{moyenne}/20</span>
+                            <span class="s5">&lt;/div&gt;</span>
+                            <span class="s5">&lt;p </span><span class="s6">className</span><span class="s2">=&quot;text-sm text-muted-foreground mt-2&quot;</span><span class="s5">&gt;</span>
+                                <span class="s1">Calculée sur {notes.length} matière(s)</span>
+                            <span class="s5">&lt;/p&gt;</span>
+                        <span class="s5">&lt;/div&gt;</span>
+                    <span class="s1">)}</span>
+                <span class="s5">&lt;/div&gt;</span>
+            <span class="s5">&lt;/CardContent&gt;</span>
+        <span class="s5">&lt;/Card&gt;</span>
+    <span class="s1">)</span><span class="s0">;</span>
+<span class="s1">}</span><span class="s0">;</span>
+
+<span class="s0">export default </span><span class="s1">GradesBulletin</span><span class="s0">;</span>
+</pre>
+</body>
+</html>
