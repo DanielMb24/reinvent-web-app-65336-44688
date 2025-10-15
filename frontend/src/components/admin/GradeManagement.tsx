@@ -24,35 +24,39 @@ import { toast } from '@/hooks/use-toast';
 import { gradeService, GradeInput } from '@/services/gradeService';
 import { apiService } from '@/services/api';
 import { exportService } from '@/services/exportService';
+import {adminConcoursService} from "@/services/adminConcoursService.ts";
+import {useAdminAuth} from "@/contexts/AdminAuthContext.tsx";
+import {adminCandidatureService} from "@/services/adminCandidatureService.ts";
 
 interface GradeManagementProps {
     concoursFilter?: number | null;
 }
 
 const GradeManagement: React.FC<GradeManagementProps> = ({ concoursFilter }) => {
+    const {admin, token, isLoading} = useAdminAuth();
     const queryClient = useQueryClient();
     const [selectedConcours, setSelectedConcours] = useState<number | null>(concoursFilter || null);
     const [grades, setGrades] = useState<Record<string, string>>({});
 
     // Récupérer les concours
-    const { data: concoursData } = useQuery({
-        queryKey: ['concours'],
-        queryFn: async () => {
-            const response = await apiService.getConcours<any[]>();
-            return response.data || [];
-        },
+    const {data: concoursData, isLoading: isLoadingConcours} = useQuery({
+        queryKey: ['adminConcours', admin?.etablissement_id],
+        queryFn: () => adminConcoursService.getConcoursByEtablissement(admin?.etablissement_id || 0),
+        enabled: !!admin?.etablissement_id && !!token,
+        retry: 2,
     });
 
-    // Récupérer les candidats du concours sélectionné
-    const { data: candidats, isLoading } = useQuery({
-        queryKey: ['candidats-notes', selectedConcours],
-        queryFn: async () => {
-            if (!selectedConcours) return [];
-            const response = await apiService.getCandidats<any[]>();
-            return (response.data || []).filter((c: any) => c.concours_id === selectedConcours);
-        },
-        enabled: !!selectedConcours,
+
+
+    const {data: candidatures, isLoading: isLoadingCandidatures} = useQuery({
+        queryKey: ['adminCandidatures', selectedConcours],
+        queryFn: () => adminCandidatureService.getAllCandidaturesByConcours(selectedConcours!),
+        enabled: !!selectedConcours && !!token, // Assure que la requête ne se lance que si selectedConcours est défini
+        retry: 2,
     });
+    
+    
+    
 
     // Récupérer les matières du concours
     const { data: matieres } = useQuery({
@@ -93,7 +97,7 @@ const GradeManagement: React.FC<GradeManagementProps> = ({ concoursFilter }) => 
                 title: 'Notes enregistrées',
                 description: 'Les notes ont été enregistrées avec succès',
             });
-            queryClient.invalidateQueries({ queryKey: ['candidats-notes'] });
+            queryClient.invalidateQueries({ queryKey: ['candidatures-notes'] });
             setGrades({});
         },
         onError: (error: any) => {
@@ -232,7 +236,7 @@ const GradeManagement: React.FC<GradeManagementProps> = ({ concoursFilter }) => 
                 </Select>
             </CardHeader>
             <CardContent>
-                {candidats && candidats.length > 0 && matieres && matieres.length > 0 ? (
+                {candidatures && candidatures.length > 0 && matieres && matieres.length > 0 ? (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
@@ -252,7 +256,7 @@ const GradeManagement: React.FC<GradeManagementProps> = ({ concoursFilter }) => 
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {candidats.map((candidat: any) => {
+                                {candidatures.map((candidat: any) => {
                                     const candidatGrades = matieres.map((matiere: any) => {
                                         const key = `${candidat.nupcan}-${matiere.id}`;
                                         return parseFloat(grades[key] || '0');

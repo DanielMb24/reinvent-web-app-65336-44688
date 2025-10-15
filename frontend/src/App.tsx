@@ -49,7 +49,6 @@ import Dashboard from './pages/admin/Dashboard';
 import GradesView from "@/pages/candidate/GradesView.tsx";
 import GradesBulletinPDF from "@/components/candidat/GradesBulletinPDF.tsx";
 
-
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -137,6 +136,16 @@ function App() {
                             <Route path="filieres" element={<GestionFilieres/>}/>
                             <Route path="notes" element={<GradeManagement/>}/>
                             <Route path="messagerie" element={<MessagerieAdmin/>}/>
+ <Route path="AdminProfile" element={<AdminProfile admin={{
+                                    id: 0,
+                                    nom: '',
+                                    prenom: '',
+                                    email: '',
+                                    role: '',
+                                    etablissement_nom: ''
+                                }} onUpdate={function(): void {
+                                    throw new Error('Function not implemented.');
+                                } }/>}/>
 
                             {/* Routes réservées au super-admin */}
                             <Route path="gestion-admins" element={

@@ -33,6 +33,7 @@ import {Message} from "postcss";
 import ConcoursDetails from "@/pages/ConcoursDetails.tsx";
 import Concours from "@/pages/Concours.tsx";
 import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
+import AdminProfile from "@/components/admin/AdminProfile.tsx";
 
 // Composant wrapper pour DocumentValidation
 const DocumentValidationTab: React.FC = () => {
@@ -85,6 +86,8 @@ interface DashboardStats {
         non_lus: number;
     };
 }
+
+
 
 
 const DashboardAdmin: React.FC = () => {
@@ -210,8 +213,9 @@ const DashboardAdmin: React.FC = () => {
                 <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                         <TabsTrigger value="concours">Concours</TabsTrigger>
-                        {/*<TabsTrigger value="documents">Documents</TabsTrigger>*/}
-                        {/*<TabsTrigger value="notes">Notes</TabsTrigger>*/}
+                    <TabsTrigger value="AdminProfile">Profile</TabsTrigger>
+                        <TabsTrigger value="documents">Documents</TabsTrigger>
+                        <TabsTrigger value="notes">Notes</TabsTrigger>
                         <TabsTrigger value="messages">Messages</TabsTrigger>
 
                     </TabsList>
@@ -401,16 +405,28 @@ const DashboardAdmin: React.FC = () => {
                         <ConcoursBasedDashboard  />
                     </TabsContent>
 
-                    {/*<TabsContent value="documents">*/}
-                    {/*    <DocumentValidationTab />*/}
-                    {/*</TabsContent>*/}
+                    <TabsContent value="documents">
+                        <DocumentValidationTab />
+                    </TabsContent>
 
-                    {/*<TabsContent value="notes">*/}
-                    {/*    <GradeManagement concoursFilter={selectedConcours} />*/}
-                    {/*</TabsContent>*/}
+                    <TabsContent value="notes">
+                        <GradeManagement concoursFilter={selectedConcours} />
+                    </TabsContent>
 
                     <TabsContent value="messages">
                         <MessagerieAdmin />
+                    </TabsContent>
+                    <TabsContent value="AdminProfile">
+                        <AdminProfile admin={{
+                        id: adminData.id,
+                        nom: '',
+                        prenom: '',
+                        email: '',
+                        role: '',
+                        etablissement_nom: ''
+                    }} onUpdate={function(): void {
+                        throw new Error('Function not implemented.');
+                    } } />
                     </TabsContent>
                 </Tabs>
             </div>
