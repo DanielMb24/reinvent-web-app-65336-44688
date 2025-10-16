@@ -34,12 +34,12 @@ const Header = () => {
                     <div className="flex items-center space-x-2">
                         <LanguageSwitcher />
                         <ThemeSwitcher />
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link to="/admin">
-                                <Settings className="h-4 w-4 mr-2"/>
-                                Administration
-                            </Link>
-                        </Button>
+                        {/*<Button variant="ghost" size="sm" asChild>*/}
+                        {/*    <Link to="/admin">*/}
+                        {/*        <Settings className="h-4 w-4 mr-2"/>*/}
+                        {/*        Administration*/}
+                        {/*    </Link>*/}
+                        {/*</Button>*/}
                     </div>
                 </div>
             </div>
