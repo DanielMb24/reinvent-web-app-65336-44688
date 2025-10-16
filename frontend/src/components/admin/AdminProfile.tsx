@@ -12,8 +12,9 @@ interface AdminProfileProps {
     admin?: { role: string; id: number; etablissement_nom: string; nom: string; prenom: string; email: string }
 }
 
+
 const AdminProfile: React.FC = ({admin}: AdminProfileProps) => {
-    const {admin} = useAdminAuth();
+
     const [loading, setLoading] = useState(false);
     const [showPasswords, setShowPasswords] = useState({
         current: false,
@@ -33,6 +34,10 @@ const AdminProfile: React.FC = ({admin}: AdminProfileProps) => {
         confirmPassword: ''
     });
 
+    function refreshAdmin() {
+
+    }
+
     const handleUpdateProfile = async () => {
         try {
             setLoading(true);
@@ -44,7 +49,7 @@ const AdminProfile: React.FC = ({admin}: AdminProfileProps) => {
                     title: 'Succès',
                     description: 'Profil mis à jour avec succès'
                 });
-                if (refreshAdmin) refreshAdmin();
+                if (admin) refreshAdmin();
             } else {
                 toast({
                     title: 'Erreur',

@@ -124,7 +124,7 @@ app.use('/api/candidatures', upload.fields([
     {name: 'photo', maxCount: 1},
     {name: 'documents', maxCount: 10}
 ]), candidatureRoutes);
-app.use('/api/sub-admins', subAdminsRoutes);
+app.use('/api/subadmins', subAdminsRoutes);
 app.use('/api/administrateurs', administrateursRoutes);
 app.use('/api/candidats', candidatsExportRoutes);
 app.use('/api/documents', documentsRoutes);

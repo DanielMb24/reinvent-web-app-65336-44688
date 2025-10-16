@@ -71,10 +71,10 @@ router.post('/admins', requireSuperAdmin, async (req, res) => {
             role: 'admin_etablissement'
         }, req.admin.adminId);
 
-        console.log('Admin créé avec succès:', newAdmin.id);
 
         // Récupérer les informations complètes pour l'email
         const adminWithDetails = await Admin.findById(newAdmin.id);
+        console.log('Admin créé avec succès:', newAdmin.id);
 
         // Envoyer l'email avec les identifiants
         try {

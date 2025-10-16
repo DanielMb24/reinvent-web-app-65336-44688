@@ -33,23 +33,39 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({children}) => {
         ];
 
         // Admin principal voit tout
-        if (admin?.role === 'admin_etablissement' || admin?.role === 'super_admin') {
+        if (admin?.role === 'admin_etablissement' ) {
             return [
                 ...baseItems,
                 { path: '/admin/concours', label: 'Concours', icon: Trophy },
-                { path: '/admin/candidats', label: 'Candidats', icon: Users },
-                { path: '/admin/dossiers', label: 'Documents', icon: FileText },
-                { path: '/admin/notes', label: 'Notes', icon: BookOpen },
-                { path: '/admin/paiements', label: 'Paiements', icon: DollarSign },
+
+
+
                 { path: '/admin/messagerie', label: 'Messages', icon: Settings },
                 { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
                 { path: '/admin/sub-admins', label: 'Sous-Admins', icon: UserCog },
                 { path: '/admin/profile', label: 'Profil', icon: Settings }
             ];
         }
+        if(admin?.role === 'super_admin'){
+
+            return [
+                ...baseItems,
+                { path: '/admin/concours', label: 'Concours', icon: Trophy },
+                { path: '/admin/candidats', label: 'Candidats', icon: Users },
+                { path: '/admin/dossiers', label: 'Documents', icon: FileText },
+
+                { path: '/admin/paiements', label: 'Paiements', icon: DollarSign },
+
+                { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
+
+                { path: '/admin/profile', label: 'Profil', icon: Settings }
+            ];
+
+
+        }
 
         // Sub-admin Notes
-        if (admin?.admin_role === 'notes') {
+        if (admin?.role === 'sub_admin' || admin?.admin_role === 'notes') {
             return [
                 ...baseItems,
                 { path: '/admin/notes', label: 'Gestion des Notes', icon: BookOpen },
@@ -58,7 +74,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({children}) => {
         }
 
         // Sub-admin Documents
-        if (admin?.admin_role === 'documents') {
+        if (admin?.role === 'sub_admin' || admin?.admin_role === 'documents') {
             return [
                 ...baseItems,
                 { path: '/admin/dossiers', label: 'Gestion des Documents', icon: FileText },

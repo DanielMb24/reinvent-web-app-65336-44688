@@ -3,7 +3,8 @@ export interface Admin {
     nom: string;
     prenom: string;
     email: string;
-    role: 'super_admin' | 'admin_etablissement';
+    role: 'super_admin' | 'admin_etablissement' | 'sub_admin';
+    admin_role : 'notes'| 'documents';
     etablissement_id?: number;
     etablissement_nom?: string;
     statut: 'actif' | 'inactif' | 'suspendu';
@@ -21,7 +22,8 @@ export interface AdminLogin {
 export interface AdminSession {
     id: number;
     email: string;
-    role: 'super_admin' | 'admin_etablissement';
+    role: 'super_admin' | 'admin_etablissement' | 'sub_admin';
+    admin_role : 'notes'| 'documents';
     nom: string;
     prenom: string;
     etablissement_id?: number;
@@ -48,7 +50,8 @@ export interface CreateAdminRequest {
     prenom: string;
     email: string;
     etablissement_id?: number;
-    role: 'admin_etablissement';
+    role: 'admin_etablissement' |  'sub_admin';
+
 }
 
 export interface PasswordResetRequest {

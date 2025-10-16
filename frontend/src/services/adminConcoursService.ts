@@ -13,6 +13,7 @@ export interface AdminConcoursData {
 }
 
 class AdminConcoursService {
+    etablissement_id: number;
     async getConcoursByEtablissement(etablissementId: number): Promise<AdminConcoursData[]> {
         try {
             console.log('AdminConcoursService: Récupération concours pour établissement:', etablissementId);

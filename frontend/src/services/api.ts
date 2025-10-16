@@ -27,7 +27,17 @@ export class ApiService {
     get(arg0: string) {
         throw new Error('Method not implemented.');
     }
-    post(arg0: string, arg1: { etablissement_id: number; created_by: number; nom: string; prenom: string; email: string; password: string; role_type: "notes" | "documents"; }): any {
+
+    post(arg0: string, arg1: {
+        password: string;
+        role: string;
+        admin_role: "notes" | "documents";
+        etablissement_id: number;
+        nom: string;
+        prenom: string;
+        created_by: number;
+        email: string
+    }): any {
         throw new Error('Method not implemented.');
     }
     private token: string | null = null;

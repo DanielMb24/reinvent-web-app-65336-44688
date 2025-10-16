@@ -48,6 +48,9 @@ import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.ts
 import Dashboard from './pages/admin/Dashboard';
 import GradesView from "@/pages/candidate/GradesView.tsx";
 import GradesBulletinPDF from "@/components/candidat/GradesBulletinPDF.tsx";
+import SubAdminsManager from "@/components/admin/SubAdminsManager.tsx";
+import AdminProfileSettings from "@/components/admin/AdminProfileSettings.tsx";
+import {Admin} from "@/types/admin.ts";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -136,17 +139,11 @@ function App() {
                             <Route path="filieres" element={<GestionFilieres/>}/>
                             <Route path="notes" element={<GradeManagement/>}/>
                             <Route path="messagerie" element={<MessagerieAdmin/>}/>
+<Route path="sub-admins" element={<SubAdminsManager/>}/>
+                            <Route path="profile" element={<AdminProfileSettings />} />
 
- <Route path="AdminProfile" element={<AdminProfile admin={{
-                                    id: 0,
-                                    nom: '',
-                                    prenom: '',
-                                    email: '',
-                                    role: '',
-                                    etablissement_nom: ''
-                                }} onUpdate={function(): void {
-                                    throw new Error('Function not implemented.');
-                                } }/>}/>
+
+
 
                             {/* Routes réservées au super-admin */}
                             <Route path="gestion-admins" element={

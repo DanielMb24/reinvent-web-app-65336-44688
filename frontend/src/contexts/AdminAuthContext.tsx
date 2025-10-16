@@ -1,18 +1,21 @@
-import React, {createContext, useContext, useState, useEffect, useRef} from 'react';
-import {api, apiService} from '@/services/api'; // Ensure this is the correct path
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { api, apiService } from '@/services/api';
 
 interface Admin {
+
     id: number;
     nom: string;
     prenom: string;
     email: string;
-    role: 'super_admin' | 'admin_etablissement';
+    role: 'super_admin' | 'admin_etablissement'| 'sub_admin';
+    admin_role : 'notes' | 'documents';
     etablissement_id?: number;
     etablissement_nom?: string;
 }
 
 interface AdminAuthContextType {
     admin: Admin | null;
+    setAdmin: React.Dispatch<React.SetStateAction<Admin | null>>; // ✅ AJOUT
     token: string | null;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<boolean>;
@@ -24,13 +27,12 @@ interface AdminAuthContextType {
 const BASE_URL = 'http://localhost:3001/api/admin';
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
-export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
+export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [admin, setAdmin] = useState<Admin | null>(null);
     const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
     const [isLoading, setIsLoading] = useState(true);
-    const apiServiceRef = useRef<typeof apiService>(apiService); // Reference to ensure single instance
+    const apiServiceRef = useRef<typeof apiService>(apiService);
 
-    // Initialize token and session on mount
     useEffect(() => {
         const savedToken = localStorage.getItem('adminToken');
         const savedAdmin = localStorage.getItem('adminData');
@@ -40,82 +42,38 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({chil
                 const parsedAdmin = JSON.parse(savedAdmin);
                 setAdmin(parsedAdmin);
                 setToken(savedToken);
-                apiServiceRef.current.setToken(savedToken); // Set token immediately
-                console.log('Restored token and set in apiService:', savedToken);
-            } catch (error) {
-                console.error('Erreur lors de la restauration de la session admin:', error);
+                apiServiceRef.current.setToken(savedToken);
+            } catch {
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('adminData');
-                apiServiceRef.current.clearToken(); // Clear token in case of error
+                apiServiceRef.current.clearToken();
             }
         }
         setIsLoading(false);
     }, []);
 
-    // Update token in apiService when it changes
     useEffect(() => {
-        if (token) {
-            console.log('Setting token in apiService:', token);
-            apiServiceRef.current.setToken(token);
-        } else if (apiServiceRef.current && typeof apiServiceRef.current.clearToken === 'function') {
-            console.log('Clearing token in apiService');
-            apiServiceRef.current.clearToken();
-        } else {
-            console.warn('clearToken not available, clearing headers manually');
-            delete api.defaults.headers.Authorization;
-        }
+        if (token) apiServiceRef.current.setToken(token);
+        else apiServiceRef.current.clearToken();
     }, [token]);
 
     const login = async (email: string, password: string): Promise<boolean> => {
-        try {
-            console.log('Tentative de connexion admin:', email);
+        const response = await fetch(`${BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-            const response = await fetch(`${BASE_URL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({email, password}),
-            });
+        const data = await response.json();
 
-            console.log('Réponse serveur:', response.status, response.statusText);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    console.error('Route admin/auth/login non trouvée');
-                    throw new Error('Service administrateur temporairement indisponible');
-                }
-
-                const errorText = await response.text();
-                console.error('Erreur de réponse:', errorText);
-
-                try {
-                    const errorData = JSON.parse(errorText);
-                    throw new Error(errorData.message || 'Erreur de connexion');
-                } catch {
-                    throw new Error('Erreur de connexion au serveur');
-                }
-            }
-
-            const data = await response.json();
-            console.log('Données de connexion reçues:', data);
-
-            if (data.success && data.data) {
-                setAdmin(data.data.admin);
-                setToken(data.data.token);
-
-                // Sauvegarder en localStorage
-                localStorage.setItem('adminToken', data.data.token);
-                localStorage.setItem('adminData', JSON.stringify(data.data.admin));
-
-                return true;
-            } else {
-                throw new Error(data.message || 'Échec de la connexion');
-            }
-        } catch (error: any) {
-            console.error('Erreur de login:', error);
-            throw error;
+        if (data.success && data.data) {
+            setAdmin(data.data.admin);
+            setToken(data.data.token);
+            localStorage.setItem('adminToken', data.data.token);
+            localStorage.setItem('adminData', JSON.stringify(data.data.admin));
+            return true;
         }
+        throw new Error(data.message || 'Échec de connexion');
     };
 
     const logout = () => {
@@ -123,11 +81,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({chil
         setToken(null);
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminData');
-        if (apiServiceRef.current && typeof apiServiceRef.current.clearToken === 'function') {
-            apiServiceRef.current.clearToken();
-        } else {
-            delete api.defaults.headers.Authorization;
-        }
+        apiServiceRef.current.clearToken();
     };
 
     const isAuthenticated = !!admin && !!token;
@@ -137,6 +91,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({chil
         <AdminAuthContext.Provider
             value={{
                 admin,
+                setAdmin, // ✅ Ajouté ici aussi
                 token,
                 isLoading,
                 login,
