@@ -88,6 +88,9 @@ const documentsExtendedRoutes = require('./routes/documents-extended');
 const notesRoutes = require('./routes/notes');
 const userRolesRoutes = require('./routes/user-roles');
 const candidatureRoutes = require('./routes/candidatures');
+const subAdminsRoutes = require('./routes/sub-admins');
+const administrateursRoutes = require('./routes/administrateurs');
+const candidatsExportRoutes = require('./routes/candidats-export');
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
@@ -117,6 +120,13 @@ app.use('/api/documents-extended', documentsExtendedRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/grades', notesRoutes); // Alias for grades
 app.use('/api/user-roles', userRolesRoutes);
+app.use('/api/candidatures', upload.fields([
+    {name: 'photo', maxCount: 1},
+    {name: 'documents', maxCount: 10}
+]), candidatureRoutes);
+app.use('/api/sub-admins', subAdminsRoutes);
+app.use('/api/administrateurs', administrateursRoutes);
+app.use('/api/candidats', candidatsExportRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/paiements', paiementsRoutes);
 app.use('/api/document-validation', documentValidationRoutes);

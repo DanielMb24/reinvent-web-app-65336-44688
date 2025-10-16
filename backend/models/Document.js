@@ -51,7 +51,125 @@ class Document {
                 [statut, id]
             );
         }
+        
+        // Vérifier et mettre à jour le statut du candidat
+        await this.checkAndUpdateCandidatStatus(id);
+        
         return this.findById(id);
+    }
+    
+    static async checkAndUpdateCandidatStatus(documentId) {
+        const connection = getConnection();
+        
+        try {
+            // Récupérer le candidat associé à ce document
+            const [dossiers] = await connection.execute(`
+                SELECT dos.nupcan, c.id as candidat_id
+                FROM dossiers dos
+                JOIN candidats c ON dos.nupcan = c.nupcan
+                WHERE dos.document_id = ?
+            `, [documentId]);
+            
+            if (dossiers.length === 0) return;
+            
+            const { nupcan, candidat_id } = dossiers[0];
+            
+            // Vérifier tous les documents du candidat
+            const [documents] = await connection.execute(`
+                SELECT d.statut
+                FROM documents d
+                JOIN dossiers dos ON d.id = dos.document_id
+                WHERE dos.nupcan = ?
+            `, [nupcan]);
+            
+            // Vérifier le paiement
+            const [paiements] = await connection.execute(
+                'SELECT statut FROM paiements WHERE nipcan = ?',
+                [nupcan]
+            );
+            
+            // Si tous les documents sont validés ET le paiement est validé
+            const allDocsValid = documents.length > 0 && documents.every(d => d.statut === 'valide');
+            const paiementValid = paiements.length > 0 && paiements[0].statut === 'valide';
+            
+            if (allDocsValid && paiementValid) {
+                // Mettre à jour le statut du candidat à "valide"
+                await connection.execute(
+                    'UPDATE candidats SET statut = ?, updated_at = NOW() WHERE id = ?',
+                    ['valide', candidat_id]
+                );
+                
+                // Créer une notification
+                const Notification = require('./Notification');
+                await Notification.create({
+                    candidat_id: candidat_id,
+                    type: 'validation',
+                    titre: 'Dossier validé',
+                    message: 'Félicitations ! Votre dossier a été entièrement validé. Vous recevrez prochainement votre convocation par email.',
+                    lu: false
+                });
+                
+                // Envoyer un email au candidat
+                const [candidats] = await connection.execute(
+                    'SELECT nomcan, prncan, maican FROM candidats WHERE id = ?',
+                    [candidat_id]
+                );
+                
+                if (candidats.length > 0) {
+                    const candidat = candidats[0];
+                    const nodemailer = require('nodemailer');
+                    const transporter = nodemailer.createTransporter({
+                        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+                        port: process.env.SMTP_PORT || 587,
+                        secure: false,
+                        auth: {
+                            user: process.env.SMTP_USER || process.env.EMAIL_USER,
+                            pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
+                        }
+                    });
+                    
+                    await transporter.sendMail({
+                        from: process.env.SMTP_USER || 'noreply@gabconcours.ga',
+                        to: candidat.maican,
+                        subject: '✅ Dossier Validé - GABConcours',
+                        html: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                                <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                                    <h1 style="color: white; margin: 0;">🎉 Félicitations !</h1>
+                                </div>
+                                <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
+                                    <p>Bonjour <strong>${candidat.prncan} ${candidat.nomcan}</strong>,</p>
+                                    <p>Nous avons le plaisir de vous informer que <strong>votre dossier de candidature a été entièrement validé</strong> !</p>
+                                    <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                                        <h3 style="margin: 0; color: #065f46;">✅ Statut : VALIDE</h3>
+                                        <p style="margin: 10px 0 0 0; color: #065f46;">
+                                            Tous vos documents ont été vérifiés et approuvés.
+                                        </p>
+                                    </div>
+                                    <p><strong>Prochaines étapes :</strong></p>
+                                    <ul>
+                                        <li>Vous recevrez votre convocation par email</li>
+                                        <li>Consultez régulièrement votre dashboard</li>
+                                        <li>Préparez-vous pour le jour du concours</li>
+                                    </ul>
+                                    <div style="text-align: center; margin: 30px 0;">
+                                        <a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${nupcan}" 
+                                           style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                            📱 Accéder à mon dashboard
+                                        </a>
+                                    </div>
+                                    <p>Bonne chance pour le concours !</p>
+                                    <p>Cordialement,<br><strong>L'équipe GABConcours</strong></p>
+                                </div>
+                            </div>
+                        `
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Erreur vérification statut candidat:', error);
+            // Non bloquant
+        }
     }
 
     static async replace(id, newFileName) {

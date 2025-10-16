@@ -26,7 +26,50 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({children}) => {
     const location = useLocation();
     const {admin, logout} = useAdminAuth();
 
-    const menuItems = [];
+    // Menu items selon le rôle
+    const getMenuItems = () => {
+        const baseItems = [
+            { path: '/admin/dashboard', label: 'Dashboard', icon: Home }
+        ];
+
+        // Admin principal voit tout
+        if (admin?.role === 'admin_etablissement' || admin?.role === 'super_admin') {
+            return [
+                ...baseItems,
+                { path: '/admin/concours', label: 'Concours', icon: Trophy },
+                { path: '/admin/candidats', label: 'Candidats', icon: Users },
+                { path: '/admin/dossiers', label: 'Documents', icon: FileText },
+                { path: '/admin/notes', label: 'Notes', icon: BookOpen },
+                { path: '/admin/paiements', label: 'Paiements', icon: DollarSign },
+                { path: '/admin/messagerie', label: 'Messages', icon: Settings },
+                { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
+                { path: '/admin/sub-admins', label: 'Sous-Admins', icon: UserCog },
+                { path: '/admin/profile', label: 'Profil', icon: Settings }
+            ];
+        }
+
+        // Sub-admin Notes
+        if (admin?.admin_role === 'notes') {
+            return [
+                ...baseItems,
+                { path: '/admin/notes', label: 'Gestion des Notes', icon: BookOpen },
+                { path: '/admin/profile', label: 'Profil', icon: Settings }
+            ];
+        }
+
+        // Sub-admin Documents
+        if (admin?.admin_role === 'documents') {
+            return [
+                ...baseItems,
+                { path: '/admin/dossiers', label: 'Gestion des Documents', icon: FileText },
+                { path: '/admin/profile', label: 'Profil', icon: Settings }
+            ];
+        }
+
+        return baseItems;
+    };
+
+    const menuItems = getMenuItems();
 
     const isActive = (path: string) => {
         if (path === '/admin/dashboard') {

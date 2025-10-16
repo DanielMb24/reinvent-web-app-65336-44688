@@ -11,43 +11,72 @@ const EnhancedAdminDashboard = () => {
     const navigate = useNavigate();
     const {admin} = useAdminAuth();
 
-    const quickActions = [
-        {
-            title: 'Gérer les Candidats',
-            description: 'Voir et gérer les candidats',
-            icon: Users,
-            action: () => navigate('/admin/candidats'),
-            color: 'bg-blue-500'
-        },
-        {
-            title: 'Gérer les Documents',
-            description: 'Valider les documents',
-            icon: FileText,
-            action: () => navigate('/admin/dossiers'),
-            color: 'bg-green-500'
-        },
-        {
-            title: 'Gérer les Notes',
-            description: 'Saisir et gérer les notes',
-            icon: Trophy,
-            action: () => navigate('/admin/notes'),
-            color: 'bg-purple-500'
-        },
-        {
-            title: 'Messages',
-            description: 'Répondre aux messages',
-            icon: Settings,
-            action: () => navigate('/admin/messagerie'),
-            color: 'bg-orange-500'
-        },
-        {
-            title: 'Messages',
-            description: 'Répondre aux messages',
-            icon: Settings,
-            action: () => navigate('/admin/concours'),
-            color: 'bg-orange-500'
+    // Actions rapides selon le rôle
+    const getQuickActions = () => {
+        // Admin principal
+        if (admin?.role === 'admin_etablissement' || admin?.role === 'super_admin') {
+            return [
+                {
+                    title: 'Gérer les Candidats',
+                    description: 'Voir et gérer les candidats',
+                    icon: Users,
+                    action: () => navigate('/admin/candidats'),
+                    color: 'bg-blue-500'
+                },
+                {
+                    title: 'Gérer les Documents',
+                    description: 'Valider les documents',
+                    icon: FileText,
+                    action: () => navigate('/admin/dossiers'),
+                    color: 'bg-green-500'
+                },
+                {
+                    title: 'Gérer les Notes',
+                    description: 'Saisir et gérer les notes',
+                    icon: Trophy,
+                    action: () => navigate('/admin/notes'),
+                    color: 'bg-purple-500'
+                },
+                {
+                    title: 'Sous-Admins',
+                    description: 'Gérer les sous-admins',
+                    icon: Settings,
+                    action: () => navigate('/admin/sub-admins'),
+                    color: 'bg-indigo-500'
+                }
+            ];
         }
-    ];
+
+        // Sub-admin Notes
+        if (admin?.admin_role === 'notes') {
+            return [
+                {
+                    title: 'Gérer les Notes',
+                    description: 'Saisir et gérer les notes',
+                    icon: Trophy,
+                    action: () => navigate('/admin/notes'),
+                    color: 'bg-purple-500'
+                }
+            ];
+        }
+
+        // Sub-admin Documents
+        if (admin?.admin_role === 'documents') {
+            return [
+                {
+                    title: 'Gérer les Documents',
+                    description: 'Valider les documents',
+                    icon: FileText,
+                    action: () => navigate('/admin/dossiers'),
+                    color: 'bg-green-500'
+                }
+            ];
+        }
+
+        return [];
+    };
+
+    const quickActions = getQuickActions();
 
     return (
         <div className="space-y-6 p-6">

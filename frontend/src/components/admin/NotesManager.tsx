@@ -147,6 +147,16 @@ const NotesManager: React.FC<NotesManagerProps> = ({
         fetchData();
     }, [isCandidatureReady, candidatId, concoursId]);
 
+    // Calculer la moyenne en temps réel
+    const calculateLiveMoyenne = (currentNotes: Note[]) => {
+        const validNotes = currentNotes.filter(n => n.note && n.note > 0);
+        if (validNotes.length === 0) return null;
+        
+        const totalPoints = validNotes.reduce((sum, n) => sum + (n.note * n.coefficient), 0);
+        const totalCoef = validNotes.reduce((sum, n) => sum + n.coefficient, 0);
+        return totalCoef > 0 ? (totalPoints / totalCoef).toFixed(2) : null;
+    };
+
     const handleNoteChange = (matiere_id: number, value: string) => {
         const noteValue = parseFloat(value) || 0;
 
@@ -154,65 +164,70 @@ const NotesManager: React.FC<NotesManagerProps> = ({
             const existingNoteIndex = notes.findIndex(n => n.matiere_id === matiere_id);
             const matiere = matieres.find(m => m.id === matiere_id);
 
+            let newNotes;
             if (existingNoteIndex >= 0) {
-                const newNotes = [...notes];
+                newNotes = [...notes];
                 newNotes[existingNoteIndex] = {
                     ...newNotes[existingNoteIndex],
                     note: noteValue
                 };
-                setNotes(newNotes);
             } else if (matiere) {
-                setNotes([...notes, {
+                newNotes = [...notes, {
                     id: 0,
                     matiere_id,
                     nom_matiere: matiere.nom_matiere,
                     note: noteValue,
                     coefficient: matiere.coefficient
-                }]);
+                }];
+            } else {
+                return;
             }
+            
+            setNotes(newNotes);
+            // Actualiser la moyenne en temps réel
+            const newMoyenne = calculateLiveMoyenne(newNotes);
+            setMoyenne(newMoyenne);
         }
     };
 
-    const saveNote = async (matiere_id: number) => {
+    // Enregistrer toutes les notes en base
+    const saveAllNotes = async () => {
         try {
             setSaving(true);
 
-            const note = notes.find(n => n.matiere_id === matiere_id);
-            if (!note || note.note === undefined || note.note === 0) {
+            const validNotes = notes.filter(n => n.note && n.note > 0);
+            if (validNotes.length === 0) {
                 toast({
                     title: 'Erreur',
-                    description: 'Veuillez saisir une note valide (0-20)',
+                    description: 'Aucune note à enregistrer',
                     variant: 'destructive'
                 });
                 return;
             }
 
-            const response = await apiService.makeRequest('/notes', 'POST', {
-                candidat_id: candidatId,
-                concours_id: concoursId,
-                matiere_id,
-                note: note.note,
-                coefficient: note.coefficient
-            });
+            // Enregistrer toutes les notes
+            const promises = validNotes.map(note =>
+                apiService.makeRequest('/notes', 'POST', {
+                    candidat_id: candidatId,
+                    concours_id: concoursId,
+                    matiere_id: note.matiere_id,
+                    note: note.note,
+                    coefficient: note.coefficient
+                })
+            );
 
-            if (response.success) {
-                toast({
-                    title: 'Succès',
-                    description: 'Note enregistrée avec succès'
-                });
-                await fetchData(); // Refresh
-            } else {
-                toast({
-                    title: 'Erreur',
-                    description: response.message || 'Erreur lors de l\'enregistrement',
-                    variant: 'destructive'
-                });
-            }
+            await Promise.all(promises);
+
+            toast({
+                title: 'Succès',
+                description: 'Toutes les notes ont été enregistrées'
+            });
+            await fetchData(); // Refresh
         } catch (error) {
-            console.error('Erreur enregistrement note:', error);
+            console.error('Erreur enregistrement notes:', error);
             toast({
                 title: 'Erreur',
-                description: 'Impossible d\'enregistrer la note',
+                description: 'Impossible d\'enregistrer les notes',
                 variant: 'destructive'
             });
         } finally {
@@ -352,47 +367,49 @@ const NotesManager: React.FC<NotesManagerProps> = ({
                                 const note = notes.find(n => n.matiere_id === matiere.id);
 
                                 return (
-                                    <div key={matiere.id} className="flex items-end gap-4 p-4 border rounded-lg bg-gray-50">
-                                        <div className="flex-1">
-                                            <Label htmlFor={`note-${matiere.id}`} className="font-medium">
-                                                {matiere.nom_matiere}
-                                                <Badge variant="secondary" className="ml-2">
-                                                    Coef. {matiere.coefficient}
-                                                </Badge>
-                                            </Label>
-                                            <Input
-                                                id={`note-${matiere.id}`}
-                                                type="number"
-                                                min="0"
-                                                max="20"
-                                                step="0.5"
-                                                value={note?.note ?? ''}
-                                                onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
-                                                placeholder="Note sur 20"
-                                                className="mt-2"
-                                            />
-                                        </div>
-                                        <Button
-                                            onClick={() => saveNote(matiere.id)}
-                                            disabled={saving || !note || note.note === undefined || note.note === 0}
-                                            variant={note?.note && note.note > 0 ? "default" : "outline"}
-                                        >
-                                            {saving ? (
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            ) : (
-                                                'Enregistrer'
-                                            )}
-                                        </Button>
+                                    <div key={matiere.id} className="p-4 border rounded-lg bg-gray-50">
+                                        <Label htmlFor={`note-${matiere.id}`} className="font-medium">
+                                            {matiere.nom_matiere}
+                                            <Badge variant="secondary" className="ml-2">
+                                                Coef. {matiere.coefficient}
+                                            </Badge>
+                                        </Label>
+                                        <Input
+                                            id={`note-${matiere.id}`}
+                                            type="number"
+                                            min="0"
+                                            max="20"
+                                            step="0.5"
+                                            value={note?.note ?? ''}
+                                            onChange={(e) => handleNoteChange(matiere.id, e.target.value)}
+                                            placeholder="Note sur 20"
+                                            className="mt-2"
+                                        />
                                     </div>
                                 );
                             })}
 
-                            {/* ✅ Bouton envoi sécurisé */}
+                            {/* Boutons d'action */}
                             {notes.filter(n => n.note && n.note > 0).length > 0 && (
-                                <div className="flex justify-end pt-4 border-t bg-green-50 rounded-lg p-4">
+                                <div className="flex justify-end gap-4 pt-4 border-t">
+                                    <Button
+                                        onClick={saveAllNotes}
+                                        disabled={saving}
+                                        variant="default"
+                                        className="gap-2"
+                                    >
+                                        {saving ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Enregistrement...
+                                            </>
+                                        ) : (
+                                            'Enregistrer en base'
+                                        )}
+                                    </Button>
                                     <Button
                                         onClick={sendResults}
-                                        disabled={sending}
+                                        disabled={sending || saving}
                                         className="gap-2 bg-green-600 hover:bg-green-700"
                                     >
                                         {sending ? (
