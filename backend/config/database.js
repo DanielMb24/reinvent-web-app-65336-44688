@@ -79,3 +79,84 @@ module.exports = {
     testConnection,
     dbConfig
 };
+//
+// const { Pool } = require('pg');
+// require('dotenv').config();
+//
+// let pool;
+//
+// /**
+//  * Crée le pool de connexions PostgreSQL
+//  */
+// const createConnection = async () => {
+//     try {
+//         pool = new Pool({
+//             connectionString: process.env.DATABASE_URL, // Utilise DATABASE_URL Render
+//             ssl: { rejectUnauthorized: false },         // Obligatoire sur Render
+//             max: 10,                                    // Connexions max
+//             idleTimeoutMillis: 30000,                   // Temps avant libération
+//         });
+//
+//         // Test rapide de la connexion
+//         const client = await pool.connect();
+//         await client.query('SELECT NOW()');
+//         client.release();
+//
+//         console.log('✅ Connexion à PostgreSQL établie');
+//         return pool;
+//     } catch (error) {
+//         console.error('❌ Erreur de connexion à PostgreSQL :', error);
+//         throw error;
+//     }
+// };
+//
+// /**
+//  * Récupère le pool existant
+//  */
+// const getConnection = () => {
+//     if (!pool) {
+//         throw new Error('Base de données non initialisée. Appelez createConnection() d’abord.');
+//     }
+//     return pool;
+// };
+//
+// /**
+//  * Test de connexion
+//  */
+// const testConnection = async () => {
+//     try {
+//         if (!pool) await createConnection();
+//         const client = await pool.connect();
+//         const result = await client.query('SELECT 1');
+//         client.release();
+//         return { success: true, message: 'Connexion PostgreSQL réussie ✅', result: result.rows };
+//     } catch (error) {
+//         console.error('❌ Erreur de test de connexion :', error);
+//         throw error;
+//     }
+// };
+//
+// /**
+//  * Gestion auto-reconnexion si le pool plante
+//  */
+// process.on('uncaughtException', async (err) => {
+//     console.error('💥 Exception non gérée :', err);
+//     if (err.message.includes('pool')) {
+//         console.log('🔄 Tentative de recréation du pool...');
+//         await createConnection();
+//     }
+// });
+//
+// process.on('unhandledRejection', async (err) => {
+//     console.error('💥 Rejection non gérée :', err);
+//     if (err.message.includes('pool')) {
+//         console.log('🔄 Tentative de recréation du pool...');
+//         await createConnection();
+//     }
+// });
+//
+// module.exports = {
+//     createConnection,
+//     getConnection,
+//     testConnection,
+// };
