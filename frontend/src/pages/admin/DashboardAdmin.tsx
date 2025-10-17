@@ -34,7 +34,7 @@ import ConcoursDetails from "@/pages/ConcoursDetails.tsx";
 import Concours from "@/pages/Concours.tsx";
 import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
 import AdminProfile from "@/components/admin/AdminProfile.tsx";
-import SubAdminsManager from "@/components/admin/SubAdminsManager.tsx";
+import FiliereConcoursFilter from "@/components/admin/FiliereConcoursFilter.tsx";
 
 // Composant wrapper pour DocumentValidation
 const DocumentValidationTab: React.FC = () => {

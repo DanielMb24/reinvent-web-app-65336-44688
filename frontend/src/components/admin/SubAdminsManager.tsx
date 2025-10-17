@@ -11,10 +11,11 @@ import {adminConcoursService} from "@/services/adminConcoursService.ts";
 const SubAdminsManager: React.FC = () => {
   const queryClient = useQueryClient();
 
-  const adminConnecte = { id: 23, etablissement_id: 1 }; // exemple
+  // ✅ Récupérer les infos de l'admin connecté depuis le localStorage
+  const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
   const [form, setForm] = useState<CreateSubAdminInput>({
-    etablissement_id: adminConnecte.etablissement_id,
-    created_by: adminConnecte.id,
+    etablissement_id: adminData.etablissement_id || 1,
+    created_by: adminData.id || 1,
     nom: "",
     prenom: "",
     email: "",

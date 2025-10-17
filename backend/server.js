@@ -91,6 +91,7 @@ const candidatureRoutes = require('./routes/candidatures');
 const subAdminsRoutes = require('./routes/sub-admins');
 const administrateursRoutes = require('./routes/administrateurs');
 const candidatsExportRoutes = require('./routes/candidats-export');
+const documentsReplacementRoutes = require('./routes/documents-replacement');
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
@@ -127,6 +128,7 @@ app.use('/api/candidatures', upload.fields([
 app.use('/api/subadmins', subAdminsRoutes);
 app.use('/api/administrateurs', administrateursRoutes);
 app.use('/api/candidats', candidatsExportRoutes);
+app.use('/api/documents', documentsReplacementRoutes); // Remplacement de documents
 app.use('/api/documents', documentsRoutes);
 app.use('/api/paiements', paiementsRoutes);
 app.use('/api/document-validation', documentValidationRoutes);

@@ -37,10 +37,17 @@ const MessagerieAdmin: React.FC = () => {
     const [replyText, setReplyText] = useState('');
     const [replySubject, setReplySubject] = useState('');
 
+    // Récupération de l'admin connecté pour filtrer par établissement
+    const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+    
     const { data: messages, isLoading } = useQuery<Message[]>({
-        queryKey: ['admin-messages'],
+        queryKey: ['admin-messages', adminData.etablissement_id],
         queryFn: async () => {
-            const response = await apiService.makeRequest<Message[]>('/messages/admin', 'GET');
+            // ✅ Filtrer les messages par établissement de l'admin
+            const params = adminData.etablissement_id 
+                ? `?etablissement_id=${adminData.etablissement_id}` 
+                : '';
+            const response = await apiService.makeRequest<Message[]>(`/messages/admin${params}`, 'GET');
             return response.data || [];
         },
         refetchInterval: 10000,

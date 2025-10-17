@@ -32,49 +32,42 @@ const AdminLayout: React.FC<AdminLayoutProps> = memo(({children}) => {
             { path: '/admin/dashboard', label: 'Dashboard', icon: Home }
         ];
 
-        // Admin principal voit tout
-        if (admin?.role === 'admin_etablissement' ) {
+        // Super Admin voit tout
+        if (admin?.role === 'super_admin') {
             return [
                 ...baseItems,
                 { path: '/admin/concours', label: 'Concours', icon: Trophy },
+                { path: '/admin/candidats', label: 'Candidats', icon: Users },
+                { path: '/admin/dossiers', label: 'Documents', icon: FileText },
+                { path: '/admin/paiements', label: 'Paiements', icon: DollarSign },
+                { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
+                { path: '/admin/profile', label: 'Profil', icon: Settings }
+            ];
+        }
 
-
-
+        // Admin établissement voit tout sauf super-admin features
+        if (admin?.role === 'admin_etablissement') {
+            return [
+                ...baseItems,
+                { path: '/admin/concours', label: 'Concours', icon: Trophy },
                 { path: '/admin/messagerie', label: 'Messages', icon: Settings },
                 { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
                 { path: '/admin/sub-admins', label: 'Sous-Admins', icon: UserCog },
                 { path: '/admin/profile', label: 'Profil', icon: Settings }
             ];
         }
-        if(admin?.role === 'super_admin'){
-
-            return [
-                ...baseItems,
-                { path: '/admin/concours', label: 'Concours', icon: Trophy },
-                { path: '/admin/candidats', label: 'Candidats', icon: Users },
-                { path: '/admin/dossiers', label: 'Documents', icon: FileText },
-
-                { path: '/admin/paiements', label: 'Paiements', icon: DollarSign },
-
-                { path: '/admin/statistiques', label: 'Statistiques', icon: BarChart3 },
-
-                { path: '/admin/profile', label: 'Profil', icon: Settings }
-            ];
-
-
-        }
 
         // Sub-admin Notes
-        if (admin?.role === 'sub_admin' || admin?.admin_role === 'notes') {
+        if (admin?.role === 'sub_admin' && admin?.admin_role === 'notes') {
             return [
                 ...baseItems,
-                { path: '/admin/notes', label: 'Gestion des Notes', icon: BookOpen },
+                { path: '/admin/notes', label: 'Gestion des Notes', icon: GraduationCap },
                 { path: '/admin/profile', label: 'Profil', icon: Settings }
             ];
         }
 
         // Sub-admin Documents
-        if (admin?.role === 'sub_admin' || admin?.admin_role === 'documents') {
+        if (admin?.role === 'sub_admin' && admin?.admin_role === 'documents') {
             return [
                 ...baseItems,
                 { path: '/admin/dossiers', label: 'Gestion des Documents', icon: FileText },
