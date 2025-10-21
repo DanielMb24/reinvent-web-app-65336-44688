@@ -58,17 +58,17 @@ const testConnection = async () => {
 
 // Gestion auto-reconnexion si pool fermé
 process.on('uncaughtException', async (err) => {
-    console.error('💥 Exception non gérée:', err);
+    console.error(' Exception non gérée:', err);
     if (err.message.includes('Pool is closed')) {
-        console.log('🔄 Tentative de recréation du pool...');
+        console.log(' Tentative de recréation du pool...');
         await createConnection();
     }
 });
 
 process.on('unhandledRejection', async (err) => {
-    console.error('💥 Rejection non gérée:', err);
+    console.error(' Rejection non gérée:', err);
     if (err.message.includes('Pool is closed')) {
-        console.log('🔄 Tentative de recréation du pool...');
+        console.log(' Tentative de recréation du pool...');
         await createConnection();
     }
 });
@@ -102,10 +102,10 @@ module.exports = {
 //         await client.query('SELECT NOW()');
 //         client.release();
 //
-//         console.log('✅ Connexion à PostgreSQL établie');
+//         console.log(' Connexion à PostgreSQL établie');
 //         return pool;
 //     } catch (error) {
-//         console.error('❌ Erreur de connexion à PostgreSQL :', error);
+//         console.error(' Erreur de connexion à PostgreSQL :', error);
 //         throw error;
 //     }
 // };

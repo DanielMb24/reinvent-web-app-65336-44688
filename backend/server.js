@@ -39,9 +39,9 @@ const storage = multer.diskStorage({
 const uploadsPath = path.join(__dirname, 'uploads/temp');
 if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
-    console.log('📁 Dossier uploads créé:', uploadsPath);
+    console.log(' Dossier uploads créé:', uploadsPath);
 } else {
-    console.log('📁 Dossier uploads existe:', uploadsPath);
+    console.log(' Dossier uploads existe:', uploadsPath);
 }
 const upload = multer({
     storage: storage,
