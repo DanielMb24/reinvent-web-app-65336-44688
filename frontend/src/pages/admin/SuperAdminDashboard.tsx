@@ -75,7 +75,7 @@ const SuperAdminDashboard = () => {
             title: 'Gérer les Concours',
             description: 'Configuration globale',
             icon: Trophy,
-            action: () => navigate('/admin/concours'),
+            action: () => navigate('/admin/concour'),
             color: 'bg-purple-500'
         },
         {

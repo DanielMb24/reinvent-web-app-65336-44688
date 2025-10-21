@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/backend/models/Concours.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/backend/routes/concours.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/backend/routes/document-validation.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/backend/routes/notes.js" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/backend/routes/supportRoutes.js" dialect="GenericSQL" />
+  </component>
+</project>

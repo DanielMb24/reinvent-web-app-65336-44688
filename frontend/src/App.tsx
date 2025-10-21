@@ -127,7 +127,7 @@ function App() {
                             <Route path="dashboard" element={<Dashboard/>}/>
 
                             <Route path="concours" element={<ConcoursBasedDashboard/>}/>
-                            <Route path="concour" element={<Concours/>}/>
+                            <Route path="concour" element={<AdminConcours/>}/>
                             <Route path="candidats" element={<AdminCandidats/>}/>
                             <Route path="candidats/:nupcan" element={<CandidateManagement/>}/>
                             <Route path="etablissements" element={<AdminEtablissements/>}/>

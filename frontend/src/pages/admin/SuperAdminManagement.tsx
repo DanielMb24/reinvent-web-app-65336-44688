@@ -1,6 +1,8 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CrudManager from '@/components/admin/CrudManager';
+import GestionNiveaux from "@/pages/admin/GestionNiveaux.tsx";
+import Concours from "@/pages/admin/Concours.tsx";
 
 const SuperAdminManagement: React.FC = () => {
     return (
@@ -21,7 +23,7 @@ const SuperAdminManagement: React.FC = () => {
                 </TabsList>
 
                 <TabsContent value="concours">
-                    <CrudManager entity="concours" title="Concours" />
+                    <Concours  />
                 </TabsContent>
 
                 <TabsContent value="etablissements">
