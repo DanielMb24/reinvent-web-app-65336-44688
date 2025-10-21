@@ -42,6 +42,9 @@ export interface ReceiptData {
 }
 
 class ReceiptService {
+    sendValidationNotification(maican: string, nomdoc: any, statut: string, commentaire: string) {
+        throw new Error("Method not implemented.");
+    }
     private validateReceiptData(data: any): ReceiptData {
 
         let phtcanValue: string | undefined;
