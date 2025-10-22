@@ -286,6 +286,113 @@ class EmailService {
             throw error;
         }
     }
+
+    // Email de candidature validée
+    async sendCandidatureValidated(candidat) {
+        const mailOptions = {
+            from: process.env.SMTP_USER || 'noreply@gabconcours.com',
+            to: candidat.maican,
+            subject: '🎉 Candidature validée - GabConcours',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0;">🎉 Félicitations !</h1>
+                    </div>
+                    <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
+                        <p>Bonjour <strong>${candidat.prncan} ${candidat.nomcan}</strong>,</p>
+                        <p>Nous avons le plaisir de vous informer que <strong>votre candidature a été entièrement validée</strong> !</p>
+                        <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                            <h3 style="margin: 0; color: #065f46;">✅ Statut : VALIDE</h3>
+                            <p style="margin: 10px 0 0 0; color: #065f46;">
+                                Tous vos documents et votre paiement ont été vérifiés et approuvés.
+                            </p>
+                        </div>
+                        <p><strong>Prochaines étapes :</strong></p>
+                        <ul>
+                            <li>Vous recevrez votre convocation par email</li>
+                            <li>Consultez régulièrement votre dashboard</li>
+                            <li>Préparez-vous pour le jour du concours</li>
+                        </ul>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${process.env.APP_URL || 'http://localhost:3001'}/dashboard/${candidat.nupcan}" 
+                               style="background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                📱 Accéder à mon dashboard
+                            </a>
+                        </div>
+                        <p>Bonne chance pour le concours !</p>
+                        <p>Cordialement,<br><strong>L'équipe GabConcours</strong></p>
+                    </div>
+                </div>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('Email candidature validée envoyé à:', candidat.maican);
+        } catch (error) {
+            console.error('Erreur envoi email candidature validée:', error);
+            throw error;
+        }
+    }
+
+    // Email des identifiants sub-admin
+    async sendSubAdminCredentials({ to, nom, prenom, tempPassword, etablissement, role }) {
+        const mailOptions = {
+            from: process.env.SMTP_USER || 'noreply@gabconcours.com',
+            to: to,
+            subject: 'Vos identifiants d\'accès - GabConcours',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #2563eb, #1d4ed8); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0;">👋 Bienvenue</h1>
+                    </div>
+                    <div style="background: #f8fafc; padding: 30px; border: 1px solid #e2e8f0;">
+                        <p>Bonjour <strong>${prenom} ${nom}</strong>,</p>
+                        <p>Vous avez été ajouté en tant que <strong>sous-administrateur</strong> pour l'établissement <strong>${etablissement}</strong>.</p>
+                        <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                            <h3 style="margin: 0 0 15px 0; color: #1e40af;">🔑 Vos identifiants de connexion</h3>
+                            <p style="margin: 5px 0;"><strong>Email :</strong> ${to}</p>
+                            <p style="margin: 5px 0;"><strong>Mot de passe temporaire :</strong> <code style="background: white; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${tempPassword}</code></p>
+                            <p style="margin: 5px 0;"><strong>Rôle attribué :</strong> ${role === 'notes' ? '📝 Gestion des Notes' : '📄 Gestion des Documents'}</p>
+                        </div>
+                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                            <p style="margin: 0; color: #92400e;">
+                                <strong>⚠️ Important :</strong> Veuillez changer votre mot de passe lors de votre première connexion pour des raisons de sécurité.
+                            </p>
+                        </div>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${process.env.APP_URL || 'http://localhost:3001'}/admin/login" 
+                               style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                                🚀 Se connecter maintenant
+                            </a>
+                        </div>
+                        <p><strong>Vos responsabilités :</strong></p>
+                        <ul>
+                            ${role === 'notes' ? `
+                                <li>Saisie et validation des notes des candidats</li>
+                                <li>Génération des bulletins de notes</li>
+                                <li>Envoi des résultats par email</li>
+                            ` : `
+                                <li>Validation des documents soumis</li>
+                                <li>Vérification de la conformité des pièces</li>
+                                <li>Communication avec les candidats</li>
+                            `}
+                        </ul>
+                        <p>Si vous avez des questions, n'hésitez pas à contacter l'administrateur principal de votre établissement.</p>
+                        <p>Cordialement,<br><strong>L'équipe GabConcours</strong></p>
+                    </div>
+                </div>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('Email identifiants sub-admin envoyé à:', to);
+        } catch (error) {
+            console.error('Erreur envoi email identifiants sub-admin:', error);
+            throw error;
+        }
+    }
 }
 
 // Fonction générique d'envoi d'email

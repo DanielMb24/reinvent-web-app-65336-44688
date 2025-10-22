@@ -61,6 +61,7 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 const concoursRoutes = require('./routes/concours');
 const candidatsRoutes = require('./routes/candidats');
+const candidatsStatusRoutes = require('./routes/candidats');
 const provincesRoutes = require('./routes/provinces');
 const niveauxRoutes = require('./routes/niveaux');
 const filieresRoutes = require('./routes/filieres');
@@ -97,6 +98,7 @@ const adminConcoursConandidaturesRoutes = require('./routes/admin-concours-candi
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
+app.use('/api/candidats', candidatsStatusRoutes);
 app.use('/api/provinces', provincesRoutes);
 app.use('/api/niveaux', niveauxRoutes);
 app.use('/api/filieres', filieresRoutes);
@@ -112,6 +114,7 @@ app.use('/api/etudiants', etudiantsRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/paiements', paiementsRoutes);
 app.use('/api/documentvalidation', documentValidationRoutes);
+app.use('/api/document-validation', documentValidationRoutes); // Alias avec tiret
 app.use('/api/admin-documents', adminDocumentsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/messages', messagesRoutes);

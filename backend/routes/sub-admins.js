@@ -78,26 +78,19 @@ router.post('/create', async (req, res) => {
 
         // Envoyer l'email avec les identifiants
         try {
-            // TODO: Implémenter l'envoi d'email réel avec Resend ou autre service
-            console.log('📧 Email à envoyer à:', email);
-            console.log('Identifiants:', {
-                email,
+            const emailService = require('../services/emailService');
+            await emailService.sendSubAdminCredentials({
+                to: email,
+                nom,
+                prenom,
                 tempPassword,
                 etablissement: etablissement[0]?.nomets,
                 role: admin_role
             });
-            
-            // Placeholder pour l'envoi d'email
-            // await emailService.sendSubAdminCredentials({
-            //     to: email,
-            //     nom,
-            //     prenom,
-            //     tempPassword,
-            //     etablissement: etablissement[0]?.nomets,
-            //     role: admin_role
-            // });
+            console.log('📧 Email envoyé avec succès à:', email);
         } catch (emailError) {
-            console.error('Erreur envoi email:', emailError);
+            console.error('Erreur envoi email (non bloquant):', emailError);
+            // Ne pas bloquer la création si l'email échoue
         }
 
         res.json({ 

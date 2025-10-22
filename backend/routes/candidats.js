@@ -58,7 +58,6 @@ const upload = multer({
     }
 });
 
-// GET /api/candidats - Récupérer tous les candidats
 router.get('/', async (req, res) => {
     try {
         const candidats = await Candidat.findAll();
@@ -75,6 +74,109 @@ router.get('/', async (req, res) => {
             message: 'Erreur serveur',
             errors: [error.message]
         });
+    }
+});
+
+// ✅ Route pour mettre à jour le statut du candidat
+router.put('/:id/statut', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { statut } = req.body;
+        const { getConnection } = require('../config/database');
+        const connection = getConnection();
+
+        await connection.execute(
+            'UPDATE candidats SET statut = ?, updated_at = NOW() WHERE id = ?',
+            [statut, id]
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'Statut mis à jour avec succès',
+            data: { id, statut }
+        });
+    } catch (error) {
+        console.error('Erreur mise à jour statut:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// ✅ Vérifier et mettre à jour automatiquement le statut d'un candidat
+router.post('/:id/check-status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { getConnection } = require('../config/database');
+        const connection = getConnection();
+
+        // Récupérer le candidat
+        const [candidat] = await connection.execute(
+            'SELECT * FROM candidats WHERE id = ?',
+            [id]
+        );
+
+        if (candidat.length === 0) {
+            return res.status(404).json({ success: false, message: 'Candidat non trouvé' });
+        }
+
+        const nupcan = candidat[0].nupcan;
+
+        // Vérifier les documents
+        const [documents] = await connection.execute(
+            'SELECT statut FROM documents WHERE nupcan = ?',
+            [nupcan]
+        );
+
+        // Vérifier le paiement
+        const [paiement] = await connection.execute(
+            'SELECT statut FROM paiements WHERE nipcan = ?',
+            [nupcan]
+        );
+
+        const allDocsValid = documents.length > 0 && documents.every(doc => doc.statut === 'valide');
+        const paiementValid = paiement.length > 0 && paiement[0].statut === 'valide';
+
+        let newStatut = 'en_attente';
+        if (allDocsValid && paiementValid) {
+            newStatut = 'valide';
+        }
+
+        // Mettre à jour le statut
+        await connection.execute(
+            'UPDATE candidats SET statut = ?, updated_at = NOW() WHERE id = ?',
+            [newStatut, id]
+        );
+
+        // Si le statut devient valide, créer une notification
+        if (newStatut === 'valide' && candidat[0].statut !== 'valide') {
+            const Notification = require('../models/Notification');
+            await Notification.create({
+                candidat_id: id,
+                type: 'candidature',
+                titre: 'Candidature validée',
+                message: 'Félicitations ! Votre candidature a été entièrement validée. Tous vos documents et votre paiement ont été approuvés.',
+                lu: false
+            });
+
+            // Envoyer un email de notification
+            try {
+                const emailService = require('../services/emailService');
+                await emailService.sendCandidatureValidated(candidat[0]);
+            } catch (emailError) {
+                console.error('Erreur envoi email (non bloquant):', emailError);
+            }
+        }
+
+        res.json({ 
+            success: true, 
+            data: { 
+                statut: newStatut,
+                documentsValides: allDocsValid,
+                paiementValide: paiementValid
+            }
+        });
+    } catch (error) {
+        console.error('Erreur vérification statut:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
+import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from '@/components/ui/dialog';
 import {Button} from '@/components/ui/button';
 import {Textarea} from '@/components/ui/textarea';
 import {Label} from '@/components/ui/label';
@@ -90,6 +90,9 @@ const DocumentValidationModal: React.FC<DocumentValidationModalProps> = ({
                         <FileText className="h-5 w-5 mr-2"/>
                         Validation de document
                     </DialogTitle>
+                    <DialogDescription>
+                        Vérifiez le document et validez ou rejetez-le avec un commentaire si nécessaire.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">

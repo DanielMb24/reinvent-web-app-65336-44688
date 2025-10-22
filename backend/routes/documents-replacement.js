@@ -41,9 +41,8 @@ const upload = multer({
 
 // Route pour remplacer un document
 router.put('/:id/replace', upload.single('file'), async (req, res) => {
-    const connection = getConnection();
-    
     try {
+        const connection = getConnection();
         const { id } = req.params;
         const file = req.file;
 

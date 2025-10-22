@@ -30,7 +30,7 @@ router.put('/:id', async (req, res) => {
         }
 
         // Mettre à jour le statut du document
-        const updatedDocument = await Document.updateStatus(id, statut);
+        const updatedDocument = await Document.updateStatus(id, statut, commentaire);
 
         // Log de la validation pour audit
         console.log(`Document ${id} ${statut} par admin ${admin_id || 'système'}`);
@@ -41,6 +41,58 @@ router.put('/:id', async (req, res) => {
         // Récupérer les informations du candidat
         const Candidat = require('../models/Candidat');
         const candidat = await Candidat.findByNupcan(document.nupcan);
+
+        // Vérifier et mettre à jour le statut du candidat automatiquement
+        if (candidat) {
+            const connection = require('../config/database').getConnection();
+            
+            // Récupérer tous les documents du candidat
+            const [allDocuments] = await connection.execute(
+                'SELECT statut FROM documents WHERE nupcan = ?',
+                [candidat.nupcan]
+            );
+            
+            // Vérifier le paiement
+            const [paiement] = await connection.execute(
+                'SELECT statut FROM paiements WHERE nipcan = ?',
+                [candidat.nupcan]
+            );
+            
+            const allDocsValid = allDocuments.length > 0 && allDocuments.every(doc => doc.statut === 'valide');
+            const paiementValid = paiement.length > 0 && paiement[0].statut === 'valide';
+            
+            // Si tous les documents et le paiement sont valides, mettre à jour le statut du candidat
+            if (allDocsValid && paiementValid) {
+                await connection.execute(
+                    'UPDATE candidats SET statut = "valide", updated_at = NOW() WHERE nupcan = ?',
+                    [candidat.nupcan]
+                );
+                
+                // Créer une notification
+                try {
+                    const Notification = require('../models/Notification');
+                    await Notification.create({
+                        candidat_id: candidat.id,
+                        type: 'candidature',
+                        titre: 'Candidature validée',
+                        message: 'Félicitations ! Votre candidature a été entièrement validée. Tous vos documents et votre paiement ont été approuvés.',
+                        lu: false
+                    });
+                } catch (notifError) {
+                    console.error('Erreur création notification (non bloquant):', notifError);
+                }
+                
+                // Envoyer un email
+                try {
+                    const emailService = require('../services/emailService');
+                    await emailService.sendCandidatureValidated(candidat);
+                } catch (emailError) {
+                    console.error('Erreur envoi email (non bloquant):', emailError);
+                }
+            }
+        }
+
+        // Récupérer les informations du candidat pour l'email de document
 
         if (candidat) {
             // Envoyer email de notification
