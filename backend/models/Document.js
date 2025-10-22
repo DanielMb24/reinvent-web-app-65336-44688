@@ -131,7 +131,7 @@ class Document {
                     await transporter.sendMail({
                         from: process.env.SMTP_USER || 'noreply@gabconcours.ga',
                         to: candidat.maican,
-                        subject: '✅ Dossier Validé - GABConcours',
+                        subject: ' Dossier Validé - GABConcours',
                         html: `
                             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                                 <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -141,7 +141,7 @@ class Document {
                                     <p>Bonjour <strong>${candidat.prncan} ${candidat.nomcan}</strong>,</p>
                                     <p>Nous avons le plaisir de vous informer que <strong>votre dossier de candidature a été entièrement validé</strong> !</p>
                                     <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
-                                        <h3 style="margin: 0; color: #065f46;">✅ Statut : VALIDE</h3>
+                                        <h3 style="margin: 0; color: #065f46;"> Statut : VALIDE</h3>
                                         <p style="margin: 10px 0 0 0; color: #065f46;">
                                             Tous vos documents ont été vérifiés et approuvés.
                                         </p>

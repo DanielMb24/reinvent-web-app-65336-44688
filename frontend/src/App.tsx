@@ -107,11 +107,7 @@ function App() {
                         <Route path="/candidat/dashboard" element={<CandidatDashboard/>}/>
                         <Route path="/recap/:nupcan" element={<RecapPaiement/>}/>
                         <Route path="/connexion" element={<Connexion/>}/>
-<Route path="/grades/:nupcan" element={<GradesBulletinPDF candidat={{
-                                nomcan: '',
-                                prncan: '',
-                                nupcan: ''
-                            }} notes={[]} moyenneGenerale={0} />}/>
+
 
                         {/* Routes admin */}
                         <Route path="/admin/login" element={<AdminLogin/>}/>
@@ -129,7 +125,9 @@ function App() {
                             <Route index element={<Navigate to="/admin/dashboard" replace/>}/>
 
                             <Route path="dashboard" element={<Dashboard/>}/>
+
                             <Route path="concours" element={<ConcoursBasedDashboard/>}/>
+                            <Route path="concour" element={<AdminConcours/>}/>
                             <Route path="candidats" element={<AdminCandidats/>}/>
                             <Route path="candidats/:nupcan" element={<CandidateManagement/>}/>
                             <Route path="etablissements" element={<AdminEtablissements/>}/>

@@ -137,10 +137,11 @@ class ReceiptService {
     }
 
     // Nouvelle méthode pour envoyer une notification de validation de document
-    async sendDocumentValidationEmail(maican: string, documentName: string, statut: 'valide' | 'rejete', commentaire?: string): Promise<void> {
+    // Nouvelle méthode pour envoyer une notification de validation de document
+    async sendDocumentValidationEmail(candidatEmail: string, documentName: string, statut: 'valide' | 'rejete', commentaire?: string): Promise<void> {
         try {
             const response = await apiService.makeRequest('/email/document-validation', 'POST', {
-                maican,
+                maican: candidatEmail,
                 documentName,
                 statut,
                 commentaire
@@ -154,6 +155,7 @@ class ReceiptService {
             throw error;
         }
     }
+
 }
 
 export const receiptService = new ReceiptService();

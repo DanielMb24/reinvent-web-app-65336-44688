@@ -14,7 +14,8 @@ import {
     Clock,
     User,
     Gift,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react';
 import {Alert, AlertDescription} from '@/components/ui/alert';
 import {Badge} from '@/components/ui/badge';
@@ -24,8 +25,8 @@ import {useCandidatureState} from '@/hooks/useCandidatureState';
 import {apiService} from '@/services/api';
 import {validatePhoneNumber, formatPhoneDisplay} from '@/utils/phoneValidation';
 
-const PaiementContinue = () => {
-    const {nupcan} = useParams<{ nupcan: string }>();
+const Paiement = () => {
+    const {numeroCandidature} = useParams<{ numeroCandidature: string }>();
     const navigate = useNavigate();
     const {candidatureState, isLoading, initializeContinueCandidature, updateProgression} = useCandidatureState();
 
@@ -36,8 +37,9 @@ const PaiementContinue = () => {
     const [phoneError, setPhoneError] = useState<string>('');
 
     useEffect(() => {
-        if (nupcan && !candidatureState) {
-            initializeContinueCandidature(nupcan).catch((error) => {
+        if (numeroCandidature && !candidatureState) {
+            // Utiliser numeroCandidature comme NUPCAN pour les nouvelles candidatures
+            initializeContinueCandidature(numeroCandidature).catch((error) => {
                 console.error('Erreur initialisation:', error);
                 toast({
                     title: "Erreur",
@@ -47,7 +49,7 @@ const PaiementContinue = () => {
                 navigate('/');
             });
         }
-    }, [nupcan, candidatureState, initializeContinueCandidature, navigate]);
+    }, [numeroCandidature, candidatureState, initializeContinueCandidature, navigate]);
 
     useEffect(() => {
         if (candidatureState?.candidatData?.telcan) {
@@ -77,17 +79,62 @@ const PaiementContinue = () => {
         }
 
         const montant = parseFloat(candidatureState.concoursData.fracnc);
+        const candidat = candidatureState.candidatData;
 
+        setIsProcessing(true);
+
+        // =========================================================
+        // GESTION DU CONCOURS GRATUIT (is_gorri / Montant = 0)
+        // Simule l'enregistrement du paiement pour valider l'étape
+        // =========================================================
         if (montant === 0) {
-            toast({
-                title: "Concours gratuit",
-                description: "Ce concours est entièrement gratuit !",
-            });
+            try {
+                // 1. Préparation des données de paiement simulé à 0 FCFA
+                const paiementGratuitData = {
+                    nupcan: candidat.nupcan || numeroCandidature,
+                    montant: 0.00,
+                    methode: 'gorri', // Méthode pour identifier un paiement gratuit (is_gorri)
+                    statut: 'valide', // Statut valide pour marquer l'étape comme terminée
+                    numero_telephone: candidat.telcan || '00000000',
+                    reference_paiement: `GRATUIT-${Date.now()}` // Référence spéciale
+                };
 
-            await updateProgression(nupcan || '', 'paiement');
-            navigate(`/succes-continue/${encodeURIComponent(nupcan || '')}`);
-            return;
+                if (!paiementGratuitData.nupcan) {
+                    throw new Error('NUPCAN manquant pour la validation gratuite');
+                }
+
+                // 2. Envoi à l'API pour enregistrement du paiement à 0
+                const response = await apiService.createPaiement(paiementGratuitData);
+
+                if (!response.success) {
+                    throw new Error(response.message || 'Erreur lors de la validation gratuite en BD');
+                }
+
+                // 3. Notification et mise à jour de la progression
+                toast({
+                    title: "Candidature finalisée",
+                    description: "Ce concours est gratuit. Votre candidature a été finalisée et soumise.",
+                });
+
+                await updateProgression(numeroCandidature || '', 'paiement');
+                navigate(`/succes/${encodeURIComponent(numeroCandidature || '')}`);
+
+            } catch (error: any) {
+                console.error('Erreur validation gratuite:', error);
+                toast({
+                    title: "Erreur de finalisation",
+                    description: `Impossible de finaliser la candidature gratuite : ${error.message}`,
+                    variant: "destructive"
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+            return; // Sortir de la fonction
         }
+
+        // =========================================================
+        // GESTION DU PAIEMENT PAYANT (Montant > 0)
+        // =========================================================
 
         if (!selectedMethod) {
             toast({
@@ -95,11 +142,13 @@ const PaiementContinue = () => {
                 description: "Veuillez sélectionner une méthode de paiement",
                 variant: "destructive"
             });
+            setIsProcessing(false);
             return;
         }
 
         if ((selectedMethod === 'moov' || selectedMethod === 'airtel_money') && !phoneNumber) {
             setPhoneError('Numéro de téléphone requis');
+            setIsProcessing(false);
             return;
         }
 
@@ -107,24 +156,32 @@ const PaiementContinue = () => {
             const validation = validatePhoneNumber(phoneNumber, selectedMethod as 'moov' | 'airtel_money');
             if (!validation.isValid) {
                 setPhoneError(validation.message);
+                setIsProcessing(false);
                 return;
             }
         }
 
-        setIsProcessing(true);
-
         try {
-            const candidat = candidatureState.candidatData;
-
+            // Utiliser le NUPCAN au lieu du NIP pour le paiement
             const paiementData = {
-                nipcan: candidat.nipcan || candidat.nupcan,
+                nupcan: candidat.nupcan || numeroCandidature, // Fallback sur numeroCandidature
                 montant: montant,
                 methode: selectedMethod,
-                statut: 'valide',
-                telephone: phoneNumber
+                statut: 'valide', // Ceci devrait être 'en_attente' pour un vrai process
+                numero_telephone: phoneNumber,
+                reference_paiement: `PAY-${Date.now()}`
             };
 
             console.log('Données paiement:', paiementData);
+
+            // Validation côté client avant envoi
+            if (!paiementData.nupcan) {
+                throw new Error('NUPCAN manquant pour le paiement');
+            }
+
+            if (!paiementData.montant || paiementData.montant <= 0) {
+                throw new Error('Montant invalide pour le paiement');
+            }
 
             const response = await apiService.createPaiement(paiementData);
 
@@ -137,14 +194,25 @@ const PaiementContinue = () => {
                 description: "Votre paiement a été traité avec succès. Un email de confirmation vous a été envoyé."
             });
 
-            await updateProgression(nupcan || '', 'paiement');
-            navigate(`/succes-continue/${encodeURIComponent(nupcan || '')}`);
+            await updateProgression(numeroCandidature || '', 'paiement');
+            navigate(`/succes/${encodeURIComponent(numeroCandidature || '')}`);
 
         } catch (error: any) {
             console.error('Erreur paiement:', error);
+
+            let errorMessage = "Une erreur est survenue lors du paiement";
+
+            if (error.message.includes('NUPCAN')) {
+                errorMessage = "Erreur d'identification du candidat";
+            } else if (error.message.includes('montant')) {
+                errorMessage = "Erreur de montant du paiement";
+            } else if (error.message.includes('serveur')) {
+                errorMessage = "Erreur de connexion au serveur";
+            }
+
             toast({
                 title: "Erreur de paiement",
-                description: error.message || "Une erreur est survenue lors du paiement",
+                description: errorMessage,
                 variant: "destructive"
             });
         } finally {
@@ -205,7 +273,8 @@ const PaiementContinue = () => {
                                     Montant: {Number(paiement.montant).toLocaleString()} FCFA
                                 </Badge>
                                 <div className="mt-6">
-                                    <Button onClick={() => navigate(`/dashboard/${encodeURIComponent(nupcan || '')}`)}>
+                                    <Button
+                                        onClick={() => navigate(`/dashboard/${encodeURIComponent(numeroCandidature || '')}`)}>
                                         Voir mon dashboard
                                     </Button>
                                 </div>
@@ -237,7 +306,8 @@ const PaiementContinue = () => {
                                     Montant: {Number(paiement.montant).toLocaleString()} FCFA
                                 </Badge>
                                 <div className="mt-6">
-                                    <Button onClick={() => navigate(`/dashboard/${encodeURIComponent(nupcan || '')}`)}>
+                                    <Button
+                                        onClick={() => navigate(`/dashboard/${encodeURIComponent(numeroCandidature || '')}`)}>
                                         Voir mon dashboard
                                     </Button>
                                 </div>
@@ -367,7 +437,12 @@ const PaiementContinue = () => {
                                         className="w-full bg-green-600 hover:bg-green-700"
                                         size="lg"
                                     >
-                                        {isProcessing ? 'Finalisation...' : 'Continuer vers la confirmation'}
+                                        {isProcessing ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                                Finalisation...
+                                            </>
+                                        ) : 'Continuer vers la confirmation'}
                                     </Button>
                                 </div>
                             ) : (
@@ -434,7 +509,12 @@ const PaiementContinue = () => {
                                             className="w-full bg-primary hover:bg-primary/90"
                                             size="lg"
                                         >
-                                            {isProcessing ? 'Traitement en cours...' : `Payer ${montant.toLocaleString()} FCFA`}
+                                            {isProcessing ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                                    Traitement en cours...
+                                                </>
+                                            ) : `Payer ${montant.toLocaleString()} FCFA`}
                                         </Button>
                                     </div>
 
@@ -455,4 +535,4 @@ const PaiementContinue = () => {
     );
 };
 
-export default PaiementContinue;
+export default Paiement;
