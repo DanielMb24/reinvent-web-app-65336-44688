@@ -9,10 +9,8 @@ class Paiement {
         try {
             // Adapter aux champs existants dans la base de données selon le schéma
             const sanitizedData = {
-                // 💡 Les IDs devraient maintenant venir du front-end
                 candidat_id: paiementData.candidat_id || null,
                 concours_id: paiementData.concours_id || null,
-
                 nupcan: paiementData.nupcan || paiementData.nipcan || null,
                 montant: parseFloat(paiementData.montant) || 0,
                 methode: paiementData.methode || 'airtel_money',
@@ -28,14 +26,9 @@ class Paiement {
                 throw new Error('NUPCAN est requis pour créer un paiement');
             }
 
-            // 💡 MODIFICATION : Assouplir la validation pour la méthode 'gorri'
-            if (sanitizedData.montant < 0) {
-                throw new Error('Le montant ne peut pas être négatif');
+            if (!sanitizedData.montant || sanitizedData.montant <= 0) {
+                throw new Error('Montant invalide pour le paiement');
             }
-            if (sanitizedData.montant === 0 && sanitizedData.methode !== 'gorri') {
-                throw new Error('Montant invalide pour le paiement (doit être > 0 si non-Gorri)');
-            }
-
 
             const [result] = await connection.execute(
                 `INSERT INTO paiements (candidat_id, concours_id, nupcan, montant, methode, statut, reference_paiement, numero_telephone, created_at, updated_at)
@@ -67,6 +60,17 @@ class Paiement {
     }
 
 
+
+    static async updateByReference(reference, data) {
+        const connection = getConnection();
+        const fields = Object.keys(data).map(key => `${key} = ?`).join(', ');
+        const values = [...Object.values(data), reference];
+        await connection.execute(
+            `UPDATE paiements SET ${fields}, updated_at = NOW() WHERE reference_paiement = ?`,
+            values
+        );
+    }
+
     static async findById(id) {
         const connection = getConnection();
         const [rows] = await connection.execute(
@@ -94,7 +98,87 @@ class Paiement {
         }
     }
 
-    // ... (méthodes updateByReference, update, validate, findAll, findByStatus inchangées)
+    static async update(id, paiementData) {
+        const connection = getConnection();
+
+        try {
+            const fields = Object.keys(paiementData).map(key => `${key} = ?`).join(', ');
+            const values = [...Object.values(paiementData), id];
+
+            await connection.execute(
+                `UPDATE paiements SET ${fields}, updated_at = NOW() WHERE id = ?`,
+                values
+            );
+            
+            // Envoyer notification après mise à jour
+            const paiement = await this.findById(id);
+            if (paiement && paiementData.statut === 'valide') {
+                const Notification = require('./Notification');
+                const Candidat = require('./Candidat');
+                const candidat = await Candidat.findByNupcan(paiement.nupcan);
+                
+                if (candidat) {
+                    await Notification.create({
+                        candidat_id: candidat.id,
+                        type: 'paiement',
+                        titre: 'Paiement validé',
+                        message: `Votre paiement de ${paiement.montant} FCFA a été validé.`,
+                        lu: false
+                    });
+                }
+            }
+
+            return this.findById(id);
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour du paiement:', error);
+            throw error;
+        }
+    }
+
+    static async validate(id) {
+        const connection = getConnection();
+
+        try {
+            await connection.execute(
+                'UPDATE paiements SET statut = ?, updated_at = NOW() WHERE id = ?',
+                ['valide', id]
+            );
+
+            return this.findById(id);
+        } catch (error) {
+            console.error('Erreur lors de la validation du paiement:', error);
+            throw error;
+        }
+    }
+
+    static async findAll() {
+        const connection = getConnection();
+
+        try {
+            const [rows] = await connection.execute(
+                'SELECT * FROM paiements ORDER BY created_at DESC'
+            );
+            return rows;
+        } catch (error) {
+            console.error('Erreur lors de la récupération des paiements:', error);
+            return [];
+        }
+    }
+
+    static async findByStatus(statut) {
+        const connection = getConnection();
+
+        try {
+            const [rows] = await connection.execute(
+                'SELECT * FROM paiements WHERE statut = ? ORDER BY created_at DESC',
+                [statut]
+            );
+            return rows;
+        } catch (error) {
+            console.error('Erreur lors de la récupération des paiements par statut:', error);
+            return [];
+        }
+    }
 }
 
 module.exports = Paiement;

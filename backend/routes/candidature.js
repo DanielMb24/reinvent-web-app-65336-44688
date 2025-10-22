@@ -160,13 +160,13 @@ function parseDate(dateStr) {
 
 // Route principale de scan
 router.post('/scan-document', upload.single('document'), async (req, res) => {
-    console.log(' === DÉBUT SCAN DOCUMENT ===');
-    console.log(' Headers:', req.headers);
-    console.log(' Body:', req.body);
-    console.log(' File:', req.file);
+    console.log('🔍 === DÉBUT SCAN DOCUMENT ===');
+    console.log('📋 Headers:', req.headers);
+    console.log('📂 Body:', req.body);
+    console.log('📄 File:', req.file);
 
     if (!req.file) {
-        console.error(' Aucun fichier reçu');
+        console.error('❌ Aucun fichier reçu');
         return res.status(400).json({
             success: false,
             error: 'Aucun fichier reçu. Vérifiez le nom du champ (doit être "document")'
@@ -174,30 +174,30 @@ router.post('/scan-document', upload.single('document'), async (req, res) => {
     }
 
     const filePath = req.file.path;
-    console.log(' Chemin fichier:', filePath);
+    console.log('📁 Chemin fichier:', filePath);
 
     try {
         let text = '';
 
         // Extraction selon le type de fichier
         if (req.file.mimetype === 'application/pdf') {
-            console.log(' Extraction PDF...');
+            console.log('📄 Extraction PDF...');
             text = await extractTextFromPDF(filePath);
         } else {
-            console.log(' OCR Image...');
+            console.log('🖼️ OCR Image...');
             text = await extractTextFromImage(filePath);
         }
 
-        console.log(' Texte extrait (longueur):', text.length);
-        console.log(' Aperçu:', text.substring(0, 500));
+        console.log('📝 Texte extrait (longueur):', text.length);
+        console.log('📝 Aperçu:', text.substring(0, 500));
 
         // Parsing des informations
         const parsedData = parseDocumentInfo(text);
-        console.log(' Données parsées:', parsedData);
+        console.log('✅ Données parsées:', parsedData);
 
         // Nettoyage du fichier temporaire
         fs.unlinkSync(filePath);
-        console.log('️ Fichier temporaire supprimé');
+        console.log('🗑️ Fichier temporaire supprimé');
 
         return res.json({
             success: true,
@@ -207,7 +207,7 @@ router.post('/scan-document', upload.single('document'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error(' Erreur scan:', error);
+        console.error('💥 Erreur scan:', error);
 
         // Nettoyage en cas d'erreur
         if (fs.existsSync(filePath)) {

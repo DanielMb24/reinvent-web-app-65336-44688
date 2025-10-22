@@ -51,7 +51,7 @@ const DocumentValidationModal: React.FC<DocumentValidationModalProps> = ({
             // Envoyer une notification par email au candidat
             if (candidatInfo?.maican) {
                 try {
-                    receiptService.sendValidationNotification(
+                    await receiptService.sendDocumentValidationEmail(
                         candidatInfo.maican,
                         document.nomdoc,
                         statut,

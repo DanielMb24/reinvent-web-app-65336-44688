@@ -1,3 +1,4 @@
+
 import React, {useState, useEffect} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
@@ -14,8 +15,7 @@ import {
     Clock,
     User,
     Gift,
-    AlertCircle,
-    Loader2
+    AlertCircle
 } from 'lucide-react';
 import {Alert, AlertDescription} from '@/components/ui/alert';
 import {Badge} from '@/components/ui/badge';
@@ -38,6 +38,7 @@ const Paiement = () => {
 
     useEffect(() => {
         if (numeroCandidature && !candidatureState) {
+            // Utiliser numeroCandidature comme NUPCAN pour les nouvelles candidatures
             initializeContinueCandidature(numeroCandidature).catch((error) => {
                 console.error('Erreur initialisation:', error);
                 toast({
@@ -78,66 +79,17 @@ const Paiement = () => {
         }
 
         const montant = parseFloat(candidatureState.concoursData.fracnc);
-        const candidat = candidatureState.candidatData;
-        const concours = candidatureState.concoursData; // Récupérer les données du concours
 
-        setIsProcessing(true);
-
-        // =========================================================
-        // GESTION DU CONCOURS GRATUIT (is_gorri / Montant = 0)
-        // =========================================================
         if (montant === 0) {
-            try {
-                // 1. Préparation des données de paiement simulé à 0 FCFA
-                const paiementGratuitData = {
-                    // AJOUT des ID pour le back-end
-                    candidat_id: candidat.id,
-                    concours_id: concours.id,
+            toast({
+                title: "Concours gratuit",
+                description: "Ce concours est entièrement gratuit !",
+            });
 
-                    nupcan: candidat.nupcan || numeroCandidature,
-                    montant: 0.00,
-                    methode: 'gorri', // Méthode pour identifier un paiement gratuit (is_gorri)
-                    statut: 'valide', // Statut valide pour marquer l'étape comme terminée
-                    numero_telephone: candidat.telcan || '00000000',
-                    reference_paiement: `GRATUIT-${Date.now()}` // Référence spéciale
-                };
-
-                if (!paiementGratuitData.nupcan) {
-                    throw new Error('NUPCAN manquant pour la validation gratuite');
-                }
-
-                // 2. Envoi à l'API pour enregistrement du paiement à 0
-                const response = await apiService.createPaiement(paiementGratuitData);
-
-                if (!response.success) {
-                    throw new Error(response.message || 'Erreur lors de la validation gratuite en BD');
-                }
-
-                // 3. Notification et mise à jour de la progression
-                toast({
-                    title: "Candidature finalisée",
-                    description: "Ce concours est gratuit. Votre candidature a été finalisée et soumise.",
-                });
-
-                await updateProgression(numeroCandidature || '', 'paiement');
-                navigate(`/succes/${encodeURIComponent(numeroCandidature || '')}`);
-
-            } catch (error: any) {
-                console.error('Erreur validation gratuite:', error);
-                toast({
-                    title: "Erreur de finalisation",
-                    description: `Impossible de finaliser la candidature gratuite : ${error.message}`,
-                    variant: "destructive"
-                });
-            } finally {
-                setIsProcessing(false);
-            }
-            return; // Sortir de la fonction
+            await updateProgression(numeroCandidature || '', 'paiement');
+            navigate(`/succes/${encodeURIComponent(numeroCandidature || '')}`);
+            return;
         }
-
-        // =========================================================
-        // GESTION DU PAIEMENT PAYANT (Montant > 0)
-        // =========================================================
 
         if (!selectedMethod) {
             toast({
@@ -145,13 +97,11 @@ const Paiement = () => {
                 description: "Veuillez sélectionner une méthode de paiement",
                 variant: "destructive"
             });
-            setIsProcessing(false);
             return;
         }
 
         if ((selectedMethod === 'moov' || selectedMethod === 'airtel_money') && !phoneNumber) {
             setPhoneError('Numéro de téléphone requis');
-            setIsProcessing(false);
             return;
         }
 
@@ -159,23 +109,22 @@ const Paiement = () => {
             const validation = validatePhoneNumber(phoneNumber, selectedMethod as 'moov' | 'airtel_money');
             if (!validation.isValid) {
                 setPhoneError(validation.message);
-                setIsProcessing(false);
                 return;
             }
         }
 
+        setIsProcessing(true);
+
         try {
+            const candidat = candidatureState.candidatData;
+
             // Utiliser le NUPCAN au lieu du NIP pour le paiement
             const paiementData = {
-                // AJOUT des ID pour le back-end
-                candidat_id: candidat.id,
-                concours_id: concours.id,
-
                 nupcan: candidat.nupcan || numeroCandidature, // Fallback sur numeroCandidature
                 montant: montant,
                 methode: selectedMethod,
-                statut: 'valide', // Ceci devrait être 'en_attente' pour un vrai process
-                numero_telephone: phoneNumber,
+                statut: 'valide',
+                numero_telephone: phoneNumber, // Corrigé: numero_telephone au lieu de telephone
                 reference_paiement: `PAY-${Date.now()}`
             };
 
@@ -444,12 +393,7 @@ const Paiement = () => {
                                         className="w-full bg-green-600 hover:bg-green-700"
                                         size="lg"
                                     >
-                                        {isProcessing ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                                Finalisation...
-                                            </>
-                                        ) : 'Continuer vers la confirmation'}
+                                        {isProcessing ? 'Finalisation...' : 'Continuer vers la confirmation'}
                                     </Button>
                                 </div>
                             ) : (
@@ -516,12 +460,7 @@ const Paiement = () => {
                                             className="w-full bg-primary hover:bg-primary/90"
                                             size="lg"
                                         >
-                                            {isProcessing ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                                                    Traitement en cours...
-                                                </>
-                                            ) : `Payer ${montant.toLocaleString()} FCFA`}
+                                            {isProcessing ? 'Traitement en cours...' : `Payer ${montant.toLocaleString()} FCFA`}
                                         </Button>
                                     </div>
 

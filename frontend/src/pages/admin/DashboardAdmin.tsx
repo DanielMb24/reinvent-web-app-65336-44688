@@ -35,7 +35,6 @@ import Concours from "@/pages/Concours.tsx";
 import ConcoursBasedDashboard from "@/components/admin/ConcoursBasedDashboard.tsx";
 import AdminProfile from "@/components/admin/AdminProfile.tsx";
 import FiliereConcoursFilter from "@/components/admin/FiliereConcoursFilter.tsx";
-import SubAdminsManager from "@/components/admin/SubAdminsManager.tsx";
 
 // Composant wrapper pour DocumentValidation
 const DocumentValidationTab: React.FC = () => {
@@ -215,7 +214,10 @@ const DashboardAdmin: React.FC = () => {
                 <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                         <TabsTrigger value="concours">Concours</TabsTrigger>
-
+                    <TabsTrigger value="AdminProfile">Profile</TabsTrigger>
+                        <TabsTrigger value="documents">Documents</TabsTrigger>
+                        <TabsTrigger value="notes">Notes</TabsTrigger>
+                        <TabsTrigger value="messages">Messages</TabsTrigger>
 
                     </TabsList>
 
@@ -404,9 +406,29 @@ const DashboardAdmin: React.FC = () => {
                         <ConcoursBasedDashboard  />
                     </TabsContent>
 
+                    <TabsContent value="documents">
+                        <DocumentValidationTab />
+                    </TabsContent>
 
+                    <TabsContent value="notes">
+                        <SubAdminsManager />
+                    </TabsContent>
 
-
+                    <TabsContent value="messages">
+                        <MessagerieAdmin />
+                    </TabsContent>
+                    <TabsContent value="AdminProfile">
+                        <AdminProfile admin={{
+                        id: adminData.id,
+                        nom: '',
+                        prenom: '',
+                        email: '',
+                        role: '',
+                        etablissement_nom: ''
+                    }} onUpdate={function(): void {
+                        throw new Error('Function not implemented.');
+                    } } />
+                    </TabsContent>
                 </Tabs>
             </div>
 

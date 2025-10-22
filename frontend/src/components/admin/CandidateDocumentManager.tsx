@@ -12,9 +12,9 @@ import DocumentValidationModal from './DocumentValidationModal';
 interface CandidateDocumentManagerProps {
     candidatNupcan: string;
     candidatInfo: {
-        nomcan: string;
-        prnom: string;
-        maican: string;
+        nom: string;
+        prenom: string;
+        email: string;
     };
     onDocumentValidated?: () => void;
 }
@@ -200,9 +200,9 @@ const CandidateDocumentManager: React.FC<CandidateDocumentManagerProps> = ({
                 onValidate={handleValidateDocument}
                 isValidating={validateDocumentMutation.isPending}
                 candidatInfo={{
-                    nomcan: candidatInfo.nomcan,
-                    prncan: candidatInfo.prnom,
-                    maican: candidatInfo.maican
+                    nomcan: candidatInfo.nom,
+                    prncan: candidatInfo.prenom,
+                    maican: candidatInfo.email
                 }}
             />
         </>

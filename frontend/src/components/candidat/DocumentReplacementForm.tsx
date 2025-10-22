@@ -27,13 +27,10 @@ const DocumentReplacementForm: React.FC<DocumentReplacementFormProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
-      const candidatData = JSON.parse(localStorage.getItem('candidatData') || '{}');
-      const token = candidatData.token || localStorage.getItem('token');
-      
       const response = await fetch(`http://localhost:3001/api/documents/${documentId}/replace`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
         },
         body: formData,
       });

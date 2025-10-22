@@ -6,7 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "nodemon --exitcrash server.js",
     "init-db": "node scripts/initDatabase.js"
   },
   "dependencies": {

@@ -62,7 +62,7 @@ const upload = multer({
 router.get('/', async (req, res) => {
     try {
         const candidats = await Candidat.findAll();
-        console.log('Candidats récupérés:', candidats.length);
+        console.log('Candidats récupérés:', candidats.length); // Log ajouté
         res.json({
             success: true,
             data: candidats,
@@ -227,7 +227,7 @@ router.get('/:id', async (req, res) => {
 // GET /api/candidats/nip/:nip - Récupérer un candidat par NIP
 router.get('/nip/:nip', async (req, res) => {
     try {
-        const candidat = await Candidat.findByNip(req.params.nipcan);
+        const candidat = await Candidat.findByNip(req.params.nip);
         if (!candidat) {
             return res.status(404).json({
                 success: false,
@@ -288,14 +288,14 @@ router.post('/', upload.single('phtcan'), async (req, res) => {
             console.log('Photo ajoutée:', req.file.filename);
             console.log('Chemin complet photo:', req.file.path);
         } else {
-            console.log(' Aucune photo reçue dans la requête');
+            console.log('⚠️ Aucune photo reçue dans la requête');
         }
 
         console.log('Données finales pour création:', candidatData);
 
         const candidat = await Candidat.create(candidatData);
 
-        console.log(' Candidat créé avec succès:', candidat);
+        console.log('✅ Candidat créé avec succès:', candidat);
 
         // Envoyer email de confirmation
         try {

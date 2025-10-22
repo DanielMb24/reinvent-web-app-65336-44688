@@ -1,8 +1,4 @@
-
-
-// =================================================================
-// FICHIER : services/types.ts (Typescript Interfaces)
-// =================================================================
+// Types pour toutes les entités du système selon l'API gabcnc.labodev.link
 
 export interface Province {
     id: number;
@@ -64,11 +60,10 @@ export interface Concours {
     sescnc: string; // session
     debcnc: string; // date début
     fincnc: string; // date fin
-    stacnc: string; // statut (1=ouvert, 2=fermé, 3=terminé) - string
+    stacnc: string; // statut (1=ouvert, 2=fermé, 3=terminé) - changé en string
     agecnc: number; // âge limite
-    fracnc: number; // frais inscription - CORRECTION: changé en number
+    fracnc: string; // frais inscription - changé en string
     etddos: number; // état dossier (0/1)
-    is_gorri: number | boolean; // NOUVEAU: 0 ou 1 pour le statut gorri
     created_at: string;
     updated_at: string;
     // Nouvelles propriétés pour les filières

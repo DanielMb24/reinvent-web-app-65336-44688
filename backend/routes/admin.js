@@ -117,7 +117,7 @@ router.get('/etablissement/:etablissementId/candidats', authenticateAdmin, async
       ORDER BY c.created_at DESC
     `, [etablissementId]);
 
-        console.log('Candidats récupérés:', candidats.length);
+        console.log('Candidats récupérés:', candidats.length); // Log ajouté
 
         res.json({
             success: true,

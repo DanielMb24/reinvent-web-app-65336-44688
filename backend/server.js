@@ -39,9 +39,9 @@ const storage = multer.diskStorage({
 const uploadsPath = path.join(__dirname, 'uploads/temp');
 if (!fs.existsSync(uploadsPath)) {
     fs.mkdirSync(uploadsPath, { recursive: true });
-    console.log(' Dossier uploads créé:', uploadsPath);
+    console.log('📁 Dossier uploads créé:', uploadsPath);
 } else {
-    console.log(' Dossier uploads existe:', uploadsPath);
+    console.log('📁 Dossier uploads existe:', uploadsPath);
 }
 const upload = multer({
     storage: storage,
@@ -92,8 +92,6 @@ const subAdminsRoutes = require('./routes/sub-admins');
 const administrateursRoutes = require('./routes/administrateurs');
 const candidatsExportRoutes = require('./routes/candidats-export');
 const documentsReplacementRoutes = require('./routes/documents-replacement');
-const superAdminCrudRoutes = require('./routes/super-admin-crud');
-const adminConcoursConandidaturesRoutes = require('./routes/admin-concours-candidatures');
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
@@ -131,8 +129,16 @@ app.use('/api/subadmins', subAdminsRoutes);
 app.use('/api/administrateurs', administrateursRoutes);
 app.use('/api/candidats', candidatsExportRoutes);
 app.use('/api/documents', documentsReplacementRoutes); // Remplacement de documents
-app.use('/api/super-admin', superAdminCrudRoutes); // CRUD SuperAdmin
-app.use('/api/admin', adminConcoursConandidaturesRoutes); // Candidatures par concours
+app.use('/api/documents', documentsRoutes);
+app.use('/api/paiements', paiementsRoutes);
+app.use('/api/document-validation', documentValidationRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/grades', notesRoutes); // Alias for grades
+app.use('/api/candidatures', candidatureRoutes);
 const {router: adminAuthRouter} = require('./routes/adminAuth');
 app.use('/api/admin/auth', adminAuthRouter);
 app.use('/api/admin/management', require('./routes/adminManagement'));

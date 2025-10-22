@@ -23,10 +23,10 @@ async function sendEmail(to, subject, htmlContent, attachments = []) {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(' Email envoyé à', to, '| MessageID:', info.messageId);
+        console.log('✅ Email envoyé à', to, '| MessageID:', info.messageId);
         return { success: true, messageId: info.messageId };
     } catch (error) {
-        console.error(' Erreur envoi email:', error.message);
+        console.error('❌ Erreur envoi email:', error.message);
         throw error;
     }
 }

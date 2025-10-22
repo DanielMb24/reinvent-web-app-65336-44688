@@ -42,9 +42,6 @@ export interface ReceiptData {
 }
 
 class ReceiptService {
-    sendValidationNotification(maican: string, nomdoc: any, statut: string, commentaire: string) {
-        throw new Error("Method not implemented.");
-    }
     private validateReceiptData(data: any): ReceiptData {
 
         let phtcanValue: string | undefined;
@@ -140,11 +137,10 @@ class ReceiptService {
     }
 
     // Nouvelle méthode pour envoyer une notification de validation de document
-    // Nouvelle méthode pour envoyer une notification de validation de document
-    async sendDocumentValidationEmail(candidatEmail: string, documentName: string, statut: 'valide' | 'rejete', commentaire?: string): Promise<void> {
+    async sendDocumentValidationEmail(maican: string, documentName: string, statut: 'valide' | 'rejete', commentaire?: string): Promise<void> {
         try {
             const response = await apiService.makeRequest('/email/document-validation', 'POST', {
-                maican: candidatEmail,
+                maican,
                 documentName,
                 statut,
                 commentaire
@@ -158,7 +154,6 @@ class ReceiptService {
             throw error;
         }
     }
-
 }
 
 export const receiptService = new ReceiptService();
