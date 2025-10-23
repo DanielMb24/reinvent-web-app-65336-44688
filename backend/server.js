@@ -95,6 +95,7 @@ const candidatsExportRoutes = require('./routes/candidats-export');
 const documentsReplacementRoutes = require('./routes/documents-replacement');
 const superAdminCrudRoutes = require('./routes/super-admin-crud');
 const adminConcoursConandidaturesRoutes = require('./routes/admin-concours-candidatures');
+const mypvitRoutes = require('./routes/mypvit');
 // API Routes
 app.use('/api/concours', concoursRoutes);
 app.use('/api/candidats', candidatsRoutes);
@@ -136,6 +137,7 @@ app.use('/api/candidats', candidatsExportRoutes);
 app.use('/api/documents', documentsReplacementRoutes); // Remplacement de documents
 app.use('/api/super-admin', superAdminCrudRoutes); // CRUD SuperAdmin
 app.use('/api/admin', adminConcoursConandidaturesRoutes); // Candidatures par concours
+app.use('/api/mypvit', mypvitRoutes); // Paiement MyPVIT
 const {router: adminAuthRouter} = require('./routes/adminAuth');
 app.use('/api/admin/auth', adminAuthRouter);
 app.use('/api/admin/management', require('./routes/adminManagement'));
